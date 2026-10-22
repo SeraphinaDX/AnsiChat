@@ -12,10 +12,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"copperline/internal/config"
-	"copperline/internal/dcc"
-	ircclient "copperline/internal/irc"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/dcc"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/model"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -60,7 +60,7 @@ func NewClient(cfg *config.Config) (*Client, error) {
 
 	client, err := NewClientWithOptions(cfg, ClientOptions{Signer: signer})
 	if err != nil && generatedKey {
-		return nil, fmt.Errorf("%w (a new Copperline relay key was generated; add %s to the relay server authorized_keys file)", err, publicKeyPath)
+		return nil, fmt.Errorf("%w (a new AnsiChat relay key was generated; add %s to the relay server authorized_keys file)", err, publicKeyPath)
 	}
 	return client, err
 }
@@ -101,7 +101,7 @@ func NewClientWithOptions(cfg *config.Config, options ClientOptions) (*Client, e
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(options.Signer)},
 		HostKeyCallback: hostKeyCallback,
 		Timeout:         15 * time.Second,
-		ClientVersion:   "SSH-2.0-Copperline-relay",
+		ClientVersion:   "SSH-2.0-AnsiChat-relay",
 	}
 	dialer := net.Dialer{Timeout: sshCfg.Timeout}
 	transport, err := dialer.DialContext(ctx, "tcp", cfg.Relay.Address)
@@ -121,7 +121,7 @@ func NewClientWithOptions(cfg *config.Config, options ClientOptions) (*Client, e
 	ch, requests, err := sshClient.OpenChannel(channelType, nil)
 	if err != nil {
 		sshClient.Close()
-		return nil, fmt.Errorf("open Copperline relay channel: %w", err)
+		return nil, fmt.Errorf("open AnsiChat relay channel: %w", err)
 	}
 	go ssh.DiscardRequests(requests)
 
@@ -278,11 +278,11 @@ func (c *Client) SetUpdateSink(sink func()) {
 
 func (c *Client) Start() {}
 
-// Stop detaches this Copperline client only. It deliberately does not stop the
+// Stop detaches this AnsiChat client only. It deliberately does not stop the
 // relay server's IRC sessions; that persistence is the purpose of relay mode.
 func (c *Client) Stop(reason string) { c.close() }
 
-// TransportConnected reports the health of the Copperline SSH attachment, not
+// TransportConnected reports the health of the AnsiChat SSH attachment, not
 // the cached IRC state carried by the last relay snapshot. The TUI uses this to
 // avoid presenting a dead relay socket as a live IRC connection.
 func (c *Client) TransportConnected() bool {

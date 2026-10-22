@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 )
 
 type searchState struct {

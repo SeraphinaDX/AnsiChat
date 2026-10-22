@@ -1,6 +1,6 @@
 package tui
 
-import "copperline/internal/model"
+import "ansichat/internal/model"
 
 func (a *App) clearCurrent() {
 	a.rebuildCurrent()

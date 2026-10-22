@@ -1,8 +1,8 @@
 package gotify
 
 import (
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 	"testing"
 )
 

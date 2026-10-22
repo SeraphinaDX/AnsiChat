@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/driver/mobile"
 	"fyne.io/fyne/v2/test"

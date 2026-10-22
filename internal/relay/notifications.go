@@ -1,6 +1,6 @@
 package relay
 
-import "copperline/internal/model"
+import "ansichat/internal/model"
 
 // Called with syncMu held, so attachment and live delivery have one boundary.
 func (s *Server) deliverMessage(msg model.Message, self string) {

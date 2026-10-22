@@ -14,7 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 )
 
 type Record struct {

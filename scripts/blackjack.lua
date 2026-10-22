@@ -1,6 +1,6 @@
 -- blackjack.lua
 --
--- A small per-user IRC blackjack game hosted by Copperline.
+-- A small per-user IRC blackjack game hosted by AnsiChat.
 --
 -- Anyone in a channel (or a private query) can play independently:
 --   !blackjack   start a new hand
@@ -8,7 +8,7 @@
 --   !stand       stand and let the dealer finish
 --   !bjhelp      show the commands
 --
--- Game state is kept in memory and resets when Lua is reloaded or Copperline
+-- Game state is kept in memory and resets when Lua is reloaded or AnsiChat
 -- exits. Each game is keyed by server + channel/query + nickname, so several
 -- users can play at the same time without sharing a deck or hand.
 --
@@ -108,7 +108,7 @@ local function game_key(server, target, nick)
 end
 
 local function send(server, target, text)
-    copperline.message(target, text, server)
+    ansichat.message(target, text, server)
 end
 
 local function finish_game(key, game, nick, server, target, prefix)
@@ -257,7 +257,7 @@ local function stand(key, nick, server, target)
     finish_game(key, game, nick, server, target, "stands.")
 end
 
-copperline.on("message", function(ev)
+ansichat.on("message", function(ev)
     local text = trim(ev.text or ""):lower()
     if text ~= "!blackjack" and text ~= "!hit" and text ~= "!stand" and text ~= "!bjhelp" then
         return

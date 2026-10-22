@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 )
 
 func TestExtract(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 
 	ui "github.com/metaspartan/gotui/v5"
 )

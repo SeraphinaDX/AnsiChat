@@ -6,9 +6,9 @@
 --   /brb making tea
 --   /back
 
-copperline.command("brb", function(ctx)
+ansichat.command("brb", function(ctx)
     if ctx.server == "" then
-        copperline.print("/brb: no active server")
+        ansichat.print("/brb: no active server")
         return
     end
 
@@ -17,16 +17,16 @@ copperline.command("brb", function(ctx)
         reason = "Away"
     end
 
-    copperline.raw("AWAY :" .. reason, ctx.server)
-    copperline.print("Away: " .. reason, ctx.server, "*server*")
+    ansichat.raw("AWAY :" .. reason, ctx.server)
+    ansichat.print("Away: " .. reason, ctx.server, "*server*")
 end)
 
-copperline.command("back", function(ctx)
+ansichat.command("back", function(ctx)
     if ctx.server == "" then
-        copperline.print("/back: no active server")
+        ansichat.print("/back: no active server")
         return
     end
 
-    copperline.raw("AWAY", ctx.server)
-    copperline.print("Away status cleared", ctx.server, "*server*")
+    ansichat.raw("AWAY", ctx.server)
+    ansichat.print("Away status cleared", ctx.server, "*server*")
 end)

@@ -1,7 +1,7 @@
 -- mentions.lua
 --
 -- Counts messages/actions that contain your current nickname during this
--- Copperline session. The counter resets whenever Lua is reloaded.
+-- AnsiChat session. The counter resets whenever Lua is reloaded.
 --
 -- Commands:
 --   /mentioncount
@@ -10,7 +10,7 @@
 local mention_count = 0
 
 local function inspect_message(ev)
-    local mynick = copperline.nick(ev.server)
+    local mynick = ansichat.nick(ev.server)
     if mynick == "" then
         return
     end
@@ -26,17 +26,17 @@ local function inspect_message(ev)
     end
 end
 
-copperline.on("message", inspect_message)
-copperline.on("action", inspect_message)
+ansichat.on("message", inspect_message)
+ansichat.on("action", inspect_message)
 
-copperline.command("mentioncount", function(ctx)
+ansichat.command("mentioncount", function(ctx)
     if ctx.args:lower() == "reset" then
         mention_count = 0
-        copperline.print("Lua mention counter reset")
+        ansichat.print("Lua mention counter reset")
         return
     end
 
-    copperline.print(
+    ansichat.print(
         "Lua mention count this session: " .. tostring(mention_count)
     )
 end)

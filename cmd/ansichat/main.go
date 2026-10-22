@@ -9,21 +9,20 @@ import (
 	"os/signal"
 	"syscall"
 
-	"copperline/internal/config"
-	"copperline/internal/irc"
-	"copperline/internal/relay"
-	"copperline/internal/tui"
-	buildversion "copperline/internal/version"
+	"ansichat/internal/config"
+	"ansichat/internal/irc"
+	"ansichat/internal/relay"
+	"ansichat/internal/tui"
+	buildversion "ansichat/internal/version"
 )
 
-
 func main() {
-	configPath := flag.String("config", config.DefaultPath(), "path to Copperline TOML configuration")
+	configPath := flag.String("config", config.DefaultPath(), "path to AnsiChat TOML configuration")
 	showVersion := flag.Bool("version", false, "print version and exit")
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Println("Copperline", buildversion.Current)
+		fmt.Println("AnsiChat", buildversion.Current)
 		return
 	}
 
@@ -41,9 +40,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("Copperline relay listening on %s", cfg.Relay.Listen)
-		log.Printf("Copperline relay host key fingerprint: %s", r.HostKeyFingerprint())
-		log.Printf("Copperline relay authorized keys: %s", config.ExpandPath(cfg.Relay.AuthorizedKeys))
+		log.Printf("AnsiChat relay listening on %s", cfg.Relay.Listen)
+		log.Printf("AnsiChat relay host key fingerprint: %s", r.HostKeyFingerprint())
+		log.Printf("AnsiChat relay authorized keys: %s", config.ExpandPath(cfg.Relay.AuthorizedKeys))
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		if err := r.Run(ctx); err != nil {

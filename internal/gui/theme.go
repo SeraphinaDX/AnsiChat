@@ -1,7 +1,7 @@
 package gui
 
 import (
-	"copperline/internal/config"
+	"ansichat/internal/config"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/theme"
 	"image/color"

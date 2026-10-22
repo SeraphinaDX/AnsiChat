@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"copperline/internal/clientcmd"
-	"copperline/internal/config"
-	"copperline/internal/model"
-	"copperline/internal/scripting"
+	"ansichat/internal/clientcmd"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
+	"ansichat/internal/scripting"
 )
 
 func (a *App) execute(line string) {

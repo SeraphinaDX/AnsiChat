@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	ircclient "copperline/internal/irc"
-	"copperline/internal/model"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/model"
 	"github.com/lrstanley/girc"
 )
 

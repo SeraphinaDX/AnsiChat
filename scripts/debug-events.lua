@@ -6,7 +6,7 @@
 
 local DEBUG = false
 
-copperline.on("irc", function(ev)
+ansichat.on("irc", function(ev)
     if not DEBUG then
         return
     end
@@ -15,7 +15,7 @@ copperline.on("irc", function(ev)
     local target = ev.target or ""
     local text = ev.text or ""
 
-    copperline.print(
+    ansichat.print(
         string.format(
             "IRC %s source=%s target=%s text=%s",
             ev.command or "?",

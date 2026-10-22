@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 )
 
 func TestChannelSortingDisplayAndNavigation(t *testing.T) {

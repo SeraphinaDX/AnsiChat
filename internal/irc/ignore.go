@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 
 	"github.com/BurntSushi/toml"
 )

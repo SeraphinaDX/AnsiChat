@@ -7,14 +7,14 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"copperline/internal/version"
+	"ansichat/internal/version"
 )
 
 func TestSummaryFormatsSystemStats(t *testing.T) {
 	s := snapshot{os: "Example Linux", kernel: "Linux 6.18", arch: "amd64", cpu: "Example CPU", gpu: "Example GPU", cores: 8,
 		totalRAM: 16 << 30, availableRAM: 6 << 30, memoryUsageKnown: true,
 		uptime: 49*time.Hour + 3*time.Minute, uptimeKnown: true}
-	want := "Copperline " + version.Current + " | OS: Example Linux (Linux 6.18)/amd64 | CPU: Example CPU — 8 logical CPUs | GPU: Example GPU | RAM: 10.0/16.0 GiB used | Up: 2d 1h 3m"
+	want := "AnsiChat " + version.Current + " | OS: Example Linux (Linux 6.18)/amd64 | CPU: Example CPU — 8 logical CPUs | GPU: Example GPU | RAM: 10.0/16.0 GiB used | Up: 2d 1h 3m"
 	if got := s.format(); got != want {
 		t.Fatalf("summary = %q, want %q", got, want)
 	}

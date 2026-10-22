@@ -1,16 +1,20 @@
-# Copperline
+# AnsiChat
 
-**Desktop and Android GUI:** the new Fyne relay frontend lives in `cmd/copperline-gui`. See [GUI.md](GUI.md) for setup, desktop builds, and Android APK packaging. The terminal frontend remains available.
+Formerly **Copperline**. The terminal command is now `ansichat`; the graphical
+client is `ansichat-gui`. See [Upgrading from Copperline](#upgrading-from-copperline)
+for configuration and relay compatibility.
 
-**Copperline is a modern terminal IRC client and native SSH relay/bouncer written in Go.** It is built for people who still love IRC, but do not want to give up a fast native application, modern IRCv3 features, rich terminal UI, scripting, notifications, persistent sessions, or strong customization.
+**Desktop and Android GUI:** the new Fyne relay frontend lives in `cmd/ansichat-gui`. See [GUI.md](GUI.md) for setup, desktop builds, and Android APK packaging. The terminal frontend remains available.
 
-Copperline is not a toy IRC example and it is not just a thin wrapper around an IRC library. It is an everyday multi-network client with its own buffer model, responsive TUI, persistent logging, DCC, Gotify notifications, Lua scripting, configurable keyboard and mouse controls, true-color themes, IRCv3 support, and an **embedded SSH relay system that can keep your IRC sessions alive when your local client is gone**.
+**AnsiChat is a modern terminal IRC client and native SSH relay/bouncer written in Go.** It is built for people who still love IRC, but do not want to give up a fast native application, modern IRCv3 features, rich terminal UI, scripting, notifications, persistent sessions, or strong customization.
 
-One Copperline installation can connect directly to IRC, run headlessly as a persistent relay, or act as a local TUI attached to a remote Copperline relay. The relay transport is built directly into Copperline using Go's SSH libraries: **no system `ssh`, no `sshd`, no web service, no TLS certificate, and no certificate authority are required.**
+AnsiChat is not a toy IRC example and it is not just a thin wrapper around an IRC library. It is an everyday multi-network client with its own buffer model, responsive TUI, persistent logging, DCC, Gotify notifications, Lua scripting, configurable keyboard and mouse controls, true-color themes, IRCv3 support, and an **embedded SSH relay system that can keep your IRC sessions alive when your local client is gone**.
 
-![Copperline main gui interface](screenshots/screenshot4.avif)
+One AnsiChat installation can connect directly to IRC, run headlessly as a persistent relay, or act as a local TUI attached to a remote AnsiChat relay. The relay transport is built directly into AnsiChat using Go's SSH libraries: **no system `ssh`, no `sshd`, no web service, no TLS certificate, and no certificate authority are required.**
 
-![Copperline themes in terminal](screenshots/screenshot2.avif)
+![AnsiChat main gui interface](screenshots/screenshot4.avif)
+
+![AnsiChat themes in terminal](screenshots/screenshot2.avif)
 
 <p align="center">
   <img src="screenshots/screenshot6.avif" alt="Android">
@@ -28,42 +32,42 @@ This project also chose the language Go precisely for its memory safety because 
 
 This code is daily driven by the author. All bugs are eliminated in a prompt manner by someone terminally online.
 
-## Why Copperline is different
+## Why AnsiChat is different
 
-Copperline deliberately combines the things people expect from a traditional IRC client with features that are usually split across a client, a bouncer, shell tools, and notification services.
+AnsiChat deliberately combines the things people expect from a traditional IRC client with features that are usually split across a client, a bouncer, shell tools, and notification services.
 
 - **A real native terminal IRC client** — built in Go, compiled to a native executable, and designed around concurrent network work without making the UI wait on it.
-- **A built-in SSH relay/bouncer** — run Copperline on a server, keep IRC connected there, and attach Copperline clients from other machines.
-- **No external SSH daemon required** — relay mode has its own embedded SSH server and private Copperline channel protocol.
+- **A built-in SSH relay/bouncer** — run AnsiChat on a server, keep IRC connected there, and attach AnsiChat clients from other machines.
+- **No external SSH daemon required** — relay mode has its own embedded SSH server and private AnsiChat channel protocol.
 - **No certificate-authority hassle** — relay clients authenticate with SSH public keys and pin the relay's SSH host-key fingerprint.
 - **Safer relay message delivery** — chat text is not cleared from the input field until the relay acknowledges the request. If the transport dies or a send cannot be confirmed, the text stays in the input instead of silently disappearing.
 - **Relay health monitoring** — the client heartbeats the SSH transport and exposes an always-visible reconnect control with a configurable shortcut.
-- **Multiple attached clients** — more than one Copperline client can attach to the same relay while the relay maintains the IRC connections.
+- **Multiple attached clients** — more than one AnsiChat client can attach to the same relay while the relay maintains the IRC connections.
 - **Modern IRCv3 without abandoning classic IRC** — server-time, message tags, echo-message, typing indicators, CHATHISTORY, account/away state, SASL, CTCP, DCC, `/raw`, and the familiar slash-command workflow all live together.
 - **A TUI meant to be lived in** — channel topics, nick lists, mouse support, buffer numbers, direct jumps, nickname completion, per-buffer input history, copy mode, startup progress, and configurable keybindings.
-- **Lua scripting built in** — add commands, react to IRC events, automate repetitive work, and extend Copperline without recompiling it.
+- **Lua scripting built in** — add commands, react to IRC events, automate repetitive work, and extend AnsiChat without recompiling it.
 - **Notifications without freezing IRC** — Gotify requests run asynchronously and can alert on mentions and private messages.
 - **Everything is themeable** — true-color palettes cover buffers, nicks, mentions, message types, borders, input, cursor, status areas, and more.
 
-Copperline is designed so the IRC connection, UI, logging, scripting, notifications, relay transport, and DCC code remain separate pieces rather than collapsing into one giant `main.go`.
+AnsiChat is designed so the IRC connection, UI, logging, scripting, notifications, relay transport, and DCC code remain separate pieces rather than collapsing into one giant `main.go`.
 
 ## Feature highlights
 
-### Native Copperline SSH relay
+### Native AnsiChat SSH relay
 
-Copperline can be its own IRC bouncer.
+AnsiChat can be its own IRC bouncer.
 
-Run one Copperline instance in relay-server mode on an always-on machine. It maintains the real IRC connections, retains bounded in-memory conversation history, tracks channel state, and accepts Copperline clients over its **embedded SSH server**.
+Run one AnsiChat instance in relay-server mode on an always-on machine. It maintains the real IRC connections, retains bounded in-memory conversation history, tracks channel state, and accepts AnsiChat clients over its **embedded SSH server**.
 
-A relay client runs the normal Copperline TUI locally while the remote relay stays connected to IRC. Closing the local client does not make the relay leave your networks and channels.
+A relay client runs the normal AnsiChat TUI locally while the remote relay stays connected to IRC. Closing the local client does not make the relay leave your networks and channels.
 
 Relay mode includes:
 
 - public-key-only authentication;
 - automatically generated Ed25519 host and client keys;
 - SHA-256 host-key fingerprint pinning;
-- a Copperline-specific `authorized_keys` file;
-- multiple attached Copperline clients;
+- a AnsiChat-specific `authorized_keys` file;
+- multiple attached AnsiChat clients;
 - retained message replay when a client attaches again;
 - synchronized server, channel, topic, nick-list, capability, typing, and connection state;
 - suppression of huge WHO/NAMES housekeeping floods such as `352`, `353`, and `354` from the relay transport;
@@ -71,15 +75,15 @@ Relay mode includes:
 - a dedicated clickable **RECONNECT** control in relay-client mode;
 - **Alt+R** as the default configurable force-reconnect shortcut;
 - safe force reconnect that replaces only the local SSH attachment and leaves IRC connected on the relay;
-- relay send acknowledgement before Copperline clears normal chat text from the input field.
+- relay send acknowledgement before AnsiChat clears normal chat text from the input field.
 
-The embedded SSH endpoint is intentionally narrow. It does **not** provide a shell, PTY, SFTP, remote command execution, or SSH port forwarding. It accepts Copperline's private relay channel only.
+The embedded SSH endpoint is intentionally narrow. It does **not** provide a shell, PTY, SFTP, remote command execution, or SSH port forwarding. It accepts AnsiChat's private relay channel only.
 
 See [`RELAY.md`](RELAY.md) for complete setup instructions.
 
 ### Modern IRCv3
 
-Copperline requests a broad modern capability set while still behaving like a recognizable IRC client. Depending on what the IRC network supports, Copperline can use:
+AnsiChat requests a broad modern capability set while still behaving like a recognizable IRC client. Depending on what the IRC network supports, AnsiChat can use:
 
 - CAP negotiation;
 - message tags;
@@ -103,7 +107,7 @@ The negotiated capability set is visible with `/caps`, and `/raw` remains availa
 
 ### A responsive, practical TUI
 
-Copperline's interface is designed for long-running everyday use rather than a minimal demo.
+AnsiChat's interface is designed for long-running everyday use rather than a minimal demo.
 
 - multiple IRC networks at once;
 - channels and private-query buffers;
@@ -120,13 +124,13 @@ Copperline's interface is designed for long-running everyday use rather than a m
 - page and single-line transcript scrolling;
 - WeeChat-style bare/copy mode for easy terminal text selection;
 - visible startup progress while servers connect and channels join;
-- drafts kept in the input when Copperline is not ready to send them;
+- drafts kept in the input when AnsiChat is not ready to send them;
 - configurable keybindings with collision and validation checks;
 - compatibility handling for modern terminal Ctrl/Alt key event forms.
 
 ### Lua scripting
 
-Copperline embeds Lua for client-side extension and automation. Scripts can:
+AnsiChat embeds Lua for client-side extension and automation. Scripts can:
 
 - register custom slash commands;
 - receive IRC event hooks;
@@ -134,15 +138,15 @@ Copperline embeds Lua for client-side extension and automation. Scripts can:
 - write local buffer text;
 - send raw IRC commands;
 - inspect the active server, target, and nickname;
-- reload without restarting Copperline.
+- reload without restarting AnsiChat.
 
-Use `/lua reload` to reload scripts. Copperline performs a physical terminal resync after script reloads to keep the TUI clean.
+Use `/lua reload` to reload scripts. AnsiChat performs a physical terminal resync after script reloads to keep the TUI clean.
 
 See [`SCRIPTING.md`](SCRIPTING.md) for the complete scripting API and [`scripts/`](scripts/) for examples.
 
 ### DCC, Gotify, logging, and themes
 
-Copperline also includes features that are often missing from smaller terminal IRC clients:
+AnsiChat also includes features that are often missing from smaller terminal IRC clients:
 
 - active DCC SEND;
 - incoming DCC CHAT;
@@ -158,7 +162,7 @@ Copperline also includes features that are often missing from smaller terminal I
 
 - **Native Go application** with garbage collection, goroutines, and a multithreaded runtime
 - **Multiple IRC networks at once**, each with multiple channels and private-message/query buffers
-- **Native Copperline SSH relay/bouncer mode** with embedded SSH and public-key authentication
+- **Native AnsiChat SSH relay/bouncer mode** with embedded SSH and public-key authentication
 - **Relay message safety** with send acknowledgement, heartbeat health detection, and force reconnect
 - **Modern IRCv3 support** with CAP negotiation, message tags, server-time, echo-message, typing indicators, CHATHISTORY, account/away/chghost state, and more
 - **TLS and SASL** with PLAIN and EXTERNAL authentication
@@ -186,7 +190,7 @@ removed; neither departure event increments unread activity. In relay mode,
 set these options on the IRC-owning relay server and restart it. The relay
 forwards generated notices to attached clients without a protocol change.
 
-## Fixed in 0.2.31
+## Fixed in 0.2.32
 
 `/flex` keeps longer GPU model names within its existing GPU field budget instead
 of cutting each model at 64 bytes. Linux uses compact AMD, NVIDIA, and Intel vendor
@@ -238,14 +242,14 @@ Omitting the setting or using `true` enables alphabetical sorting.
 
 `/flex` posts a compact system summary to the current channel or query in every
 frontend: TUI, desktop GUI, and Android GUI. Command names are case-insensitive,
-so `/Flex` works too. The summary includes Copperline version, OS/release and
+so `/Flex` works too. The summary includes AnsiChat version, OS/release and
 architecture, CPU model and logical CPU count, GPU, RAM, and system uptime when
 available. Android also includes the device model when available.
 Windows uses native system/registry APIs; macOS reports total RAM. Other platforms
 retain the portable OS, architecture, and CPU-count baseline. Missing/restricted
 stats are omitted.
 
-The statistics describe the device running Copperline, including in relay mode.
+The statistics describe the device running AnsiChat, including in relay mode.
 The command takes no arguments and uses the normal message delivery path, so a
 failed send keeps `/flex` in the TUI input or restores the GUI draft. It does not
 include hostname, username, IP addresses, serial numbers, or account details.
@@ -253,7 +257,7 @@ include hostname, username, IP addresses, serial numbers, or account details.
 Example (values vary by device):
 
 ```text
-Copperline 0.2.31 | OS: CachyOS (Linux 6.18)/amd64 | CPU: Intel Core i5 — 8 logical CPUs | GPU: Intel UHD Graphics 620 | RAM: 4.2/15.5 GiB used | Up: 2d 3h 12m
+AnsiChat 0.2.32 | OS: CachyOS (Linux 6.18)/amd64 | CPU: Intel Core i5 — 8 logical CPUs | GPU: Intel UHD Graphics 620 | RAM: 4.2/15.5 GiB used | Up: 2d 3h 12m
 ```
 
 ## Fixed in 0.2.26
@@ -265,7 +269,7 @@ viewport changes. Navigation controls hide while typing to give chat more room.
 
 ## New in 0.2.25
 
-`/map` requests the IRC network topology from the active server in every Copperline frontend: the terminal UI, desktop GUI, and Android GUI. MAP replies are shown in the network's server/status buffer. The command accepts no arguments and uses the relay's existing raw IRC path, so no relay protocol bump is required.
+`/map` requests the IRC network topology from the active server in every AnsiChat frontend: the terminal UI, desktop GUI, and Android GUI. MAP replies are shown in the network's server/status buffer. The command accepts no arguments and uses the relay's existing raw IRC path, so no relay protocol bump is required.
 
 ## Fixed in 0.2.18
 
@@ -302,14 +306,14 @@ Customize the text returned to `/ctcp yourNick VERSION` in your existing TOML co
 ctcp_version = "My IRC client"
 ```
 
-Omit `ctcp_version` to retain `Copperline by Britney Lozza`, or set it to `""` to disable VERSION replies. Leading/trailing whitespace is trimmed. The value must be a single line without NUL or CTCP delimiter characters. This changes only the CTCP VERSION response, not `--version` or other CTCP replies. Requests still appear in the conversation even when replies are disabled.
+Omit `ctcp_version` to retain `AnsiChat by Britney Lozza`, or set it to `""` to disable VERSION replies. Leading/trailing whitespace is trimmed. The value must be a single line without NUL or CTCP delimiter characters. This changes only the CTCP VERSION response, not `--version` or other CTCP replies. Requests still appear in the conversation even when replies are disabled.
 
 In direct mode, configure your local client. In relay mode, configure the **relay server**, which sends the IRC replies; changing only an attached client's config has no effect. Restart the relevant instance after changing this setting.
 
 ## New in 0.2.14
 
 - **Per-buffer drafts:** channels, private conversations, and server buffers each retain their own unsent text, cursor position, and multiline paste state when you switch away. Drafts stay on the current machine for the current session and survive relay reconnects. Sending clears that buffer's draft; `/close` discards it.
-- **`/clear`:** clears the current buffer's visible scrollback and unread marker. Other buffers, your input draft, log files, and relay history remain intact. Cleared rows stay hidden across buffer switches and relay reconnects in the same session. Restarting Copperline can load history again.
+- **`/clear`:** clears the current buffer's visible scrollback and unread marker. Other buffers, your input draft, log files, and relay history remain intact. Cleared rows stay hidden across buffer switches and relay reconnects in the same session. Restarting AnsiChat can load history again.
 - **Custom highlights:** add literal words or phrases alongside your nickname. Matches are case-insensitive, respect word boundaries, and apply to other users' messages and `/me` actions. They use the existing mention color and Gotify mention setting; your own messages do not trigger alerts.
 - **URL grabber:** optionally collect HTTP(S) links from messages, actions, and notices, including your own. Configure it on the relay server to collect while clients are disconnected, or on your local machine in direct mode.
 
@@ -317,17 +321,17 @@ Add these settings to the existing sections of your TOML config:
 
 ```toml
 [general]
-highlight_words = ["Copperline", "alternateNick", "server down"]
+highlight_words = ["AnsiChat", "alternateNick", "server down"]
 
 [urls]
-file = "~/.local/state/copperline/urls.jsonl"
+file = "~/.local/state/ansichat/urls.jsonl"
 ```
 
 For relay-owned Gotify alerts, set `highlight_words` on the relay. Clients receive those highlight flags and can add local highlight words for display. Client-only words cannot trigger notifications owned by the relay. Restart the relevant instance after changing the config.
 
 URL collection is disabled when `urls.file` is blank or omitted. The file is append-only JSON Lines, with `time`, `server`, `target`, `nick`, and `url` on each line; timestamps include their timezone. Parent directories are created automatically. Links are never opened or fetched. Ignored messages and relay attachment replay are not collected. Each URL is saved only once across all buffers, keeping its first sender/channel/time. The saved file is indexed at startup, so duplicate suppression survives reconnects and restarts, including repeated IRC history. Scheme and hostname casing are ignored; paths, queries, and fragments remain distinct. Use a separate file for each collector process.
 
-URL writes run in a bounded background queue. Slow or failing storage cannot block IRC delivery; queue overflow drops links, and the first collection error appears in the first configured network's server buffer. Later messages retry writes. If an existing file cannot be read or contains malformed records, collection is disabled until the file is fixed and Copperline restarted, so it cannot append duplicates unknowingly. `/clear` does not erase collected URLs.
+URL writes run in a bounded background queue. Slow or failing storage cannot block IRC delivery; queue overflow drops links, and the first collection error appears in the first configured network's server buffer. Later messages retry writes. If an existing file cannot be read or contains malformed records, collection is disabled until the file is fixed and AnsiChat restarted, so it cannot append duplicates unknowingly. `/clear` does not erase collected URLs.
 
 ## Fixed in 0.2.13
 
@@ -335,13 +339,13 @@ Nicknames containing IRC-valid square brackets now render literally in the user 
 
 ## Fixed in 0.2.12
 
-IRC server connections now prefer IPv6 regardless of the DNS resolver's address ordering. Copperline starts with the server's IPv6 addresses, then begins an IPv4 fallback after 250 milliseconds so IPv4-only servers and networks with unavailable or broken IPv6 still connect promptly. An explicit IPv4 or IPv6 address in `host` continues to use that address family directly.
+IRC server connections now prefer IPv6 regardless of the DNS resolver's address ordering. AnsiChat starts with the server's IPv6 addresses, then begins an IPv4 fallback after 250 milliseconds so IPv4-only servers and networks with unavailable or broken IPv6 still connect promptly. An explicit IPv4 or IPv6 address in `host` continues to use that address family directly.
 
 ## New in 0.2.11
 
 `/ignore` provides a persistent, relay-aware ignore list with network, channel, and global scopes. Plain masks support case-insensitive `*` wildcards; advanced rules may use Go/RE2 expressions prefixed with `re:`. Ignored chat, actions, notices, typing indicators, CTCP lines, and DCC offers are removed before history and notifications, while membership and moderation state remains intact. Command results are displayed in the buffer where `/ignore` was entered.
 
-Common forms are `/ignore add Alice`, `/ignore add Alice --channel`, `/ignore add Alice --global`, `/ignore list`, `/ignore remove Alice`, `/ignore remove 2`, and `/ignore clear`. Rules live in `[general].ignore_file`, which defaults to `~/.config/copperline/ignores.toml`; relay users configure this on the relay server.
+Common forms are `/ignore add Alice`, `/ignore add Alice --channel`, `/ignore add Alice --global`, `/ignore list`, `/ignore remove Alice`, `/ignore remove 2`, and `/ignore clear`. Rules live in `[general].ignore_file`, which defaults to `~/.config/ansichat/ignores.toml`; relay users configure this on the relay server.
 
 ## Fixed in 0.2.10
 
@@ -375,7 +379,7 @@ The relay also rejects overlapping message sends promptly rather than accumulati
 
 When Gotify is enabled on the relay, the relay sends eligible mention/private-message alerts whether or not clients are attached. Client alerts are suppressed to avoid duplicates. If relay Gotify is disabled, the oldest eligible attached client remains responsible for notifications.
 
-In relay-client mode, `/gotify status` and `/gotify test` now query/test the relay's notifier. Status includes HTTP delivery successes, failures, queue drops, and the last attempt/success/error. Counters reset when Copperline restarts; HTTP success means Gotify accepted the alert, not that a phone displayed it. Failed alerts are not automatically retried. Update the relay and clients for remote diagnostics; protocol remains 2.
+In relay-client mode, `/gotify status` and `/gotify test` now query/test the relay's notifier. Status includes HTTP delivery successes, failures, queue drops, and the last attempt/success/error. Counters reset when AnsiChat restarts; HTTP success means Gotify accepted the alert, not that a phone displayed it. Failed alerts are not automatically retried. Update the relay and clients for remote diagnostics; protocol remains 2.
 
 ## Fixed in 0.2.3
 
@@ -405,22 +409,46 @@ Channel selection once again clears activity indicators and follows the newest m
 
 ## Requirements
 
-Copperline requires **Go 1.26 or newer**. Relay mode uses the September 2026 SSH security fixes in `golang.org/x/crypto v0.56.0`.
+AnsiChat requires **Go 1.26 or newer**. Relay mode uses the September 2026 SSH security fixes in `golang.org/x/crypto v0.56.0`.
 
 ## Build
 
 ```sh
 go mod tidy
-go build -o Copperline ./cmd/copperline
+go build -o ansichat ./cmd/ansichat
 ```
 
 Check the version with:
 
 ```sh
-./Copperline -version
+./ansichat -version
 ```
 
 ## Configuration
+
+### Upgrading from Copperline
+
+AnsiChat 0.2.32 continues the existing project under its new name. Build the
+renamed entry points with `make tui` and `make gui`, or use the commands below.
+For an installed desktop launcher, run `make install-gui` to update its name and
+executable. Update any relay service or startup command to run `ansichat`.
+
+If the new default `ansichat/config.toml` does not exist, AnsiChat loads the
+existing `copperline/config.toml` from the same configuration root. Existing
+explicit paths and environment-variable names in TOML keep working. Default
+logs, ignore rules, scripts, and relay keys also reuse their Copperline paths
+when those exist and the corresponding AnsiChat paths do not. Files are not
+moved or overwritten by this fallback.
+
+The GUI/Android app ID remains `ca.cerberusgames.copperline` to retain private
+settings and keys and allow Android updates with the same signing certificate.
+The relay wire protocol remains version 2 and keeps its existing channel
+identifier and default SSH username (`copperline`), allowing existing clients
+and relays to connect. Custom CTCP VERSION replies remain unchanged; the built-in
+reply and `/flex` now identify AnsiChat.
+
+New Lua scripts use `ansichat.*`; `copperline.*` remains an alias for existing
+scripts. No script conversion is required.
 
 For the complete TOML reference, defaults, theme options, DCC, SASL, IRCv3 capability settings, keybindings, logging, and relay settings, see [`CONFIGURATION.md`](CONFIGURATION.md).
 
@@ -428,30 +456,30 @@ For Lua scripts, custom commands, event hooks, and the complete scripting API, s
 
 For the native SSH relay/bouncer mode, including server/client TOML examples and key setup, see [`RELAY.md`](RELAY.md).
 
-Copperline defaults to:
+AnsiChat defaults to:
 
 ```text
-~/.config/copperline/config.toml
+~/.config/ansichat/config.toml
 ```
 
-or `$XDG_CONFIG_HOME/copperline/config.toml` when `XDG_CONFIG_HOME` is set.
+or `$XDG_CONFIG_HOME/ansichat/config.toml` when `XDG_CONFIG_HOME` is set.
 
 Start with `config.example.toml`:
 
 ```sh
-mkdir -p ~/.config/copperline
-cp config.example.toml ~/.config/copperline/config.toml
+mkdir -p ~/.config/ansichat
+cp config.example.toml ~/.config/ansichat/config.toml
 ```
 
 A different configuration file can be selected with:
 
 ```sh
-./Copperline -config=./my-config.toml
+./ansichat -config=./my-config.toml
 ```
 
 ### Passwords and secrets
 
-For passwords and tokens, environment variables are preferable to storing secrets directly in TOML. Copperline reads the variable named by `password_env`, `token_env`, or the relevant secret setting.
+For passwords and tokens, environment variables are preferable to storing secrets directly in TOML. AnsiChat reads the variable named by `password_env`, `token_env`, or the relevant secret setting.
 
 For example, a Libera SASL configuration can use:
 
@@ -472,26 +500,26 @@ With fish:
 ```fish
 read -s -P 'Libera IRC password: ' LIBERA_IRC_PASSWORD
 set -x LIBERA_IRC_PASSWORD $LIBERA_IRC_PASSWORD
-./Copperline
+./ansichat
 ```
 
 For bash or zsh:
 
 ```sh
 export LIBERA_IRC_PASSWORD='your-password-here'
-./Copperline
+./ansichat
 ```
 
 ### Message date and time
 
-To show the date as well as the time, set `timestamp` in the existing `[general]` section of that machine's Copperline TOML configuration:
+To show the date as well as the time, set `timestamp` in the existing `[general]` section of that machine's AnsiChat TOML configuration:
 
 ```toml
 [general]
 timestamp = "2006-01-02 15:04:05"
 ```
 
-Restart that Copperline client after saving. Messages display in the machine's local time, for example `2026-09-11 08:30:45`. Relay clients format their own timestamps, so you can enable dates on one machine while leaving the others unchanged; no relay-server configuration change is needed.
+Restart that AnsiChat client after saving. Messages display in the machine's local time, for example `2026-09-11 08:30:45`. Relay clients format their own timestamps, so you can enable dates on one machine while leaving the others unchanged; no relay-server configuration change is needed.
 
 The setting uses Go's reference-time layout: keep the literal reference date `2006-01-02` in the configuration rather than substituting today's date.
 
@@ -506,7 +534,7 @@ The setting uses Go's reference-time layout: keep the literal reference date `20
 
 ### Native SSH relay mode
 
-Select the Copperline role in TOML:
+Select the AnsiChat role in TOML:
 
 ```toml
 [relay]
@@ -522,13 +550,13 @@ Relay-client mode has a dedicated always-visible reconnect control. By default:
 relay_reconnect = "Alt+R"
 ```
 
-Force reconnect tears down only the client's Copperline SSH attachment. It does not tell the relay to disconnect from IRC.
+Force reconnect tears down only the client's AnsiChat SSH attachment. It does not tell the relay to disconnect from IRC.
 
 See [`RELAY.md`](RELAY.md) for host-key fingerprint setup, generated client keys, `authorized_keys`, server/client configuration, retained history, and security notes.
 
 ### Logging
 
-Logging is enabled by default. Copperline can show a small persisted conversation preview from before the current process/session while keeping current-session messages in normal live styling.
+Logging is enabled by default. AnsiChat can show a small persisted conversation preview from before the current process/session while keeping current-session messages in normal live styling.
 
 Disable all on-disk IRC logs while keeping normal in-memory scrollback with:
 
@@ -540,27 +568,27 @@ logging = false
 The default log location is:
 
 ```text
-~/.local/state/copperline/logs/<server>/<buffer>.log
+~/.local/state/ansichat/logs/<server>/<buffer>.log
 ```
 
 Log files are created with mode `0600`; directories use `0700`.
 
 ### Gotify notifications
 
-Copperline can push incoming mentions and private messages to Gotify. Gotify delivery is asynchronous so a slow or unavailable notification service does not freeze IRC or the TUI. When configured on the relay server, alerts continue with clients attached or detached. Use `/gotify status` on an updated relay client to inspect the relay's delivery counters and last error; `/gotify test` sends a test from the relay. In direct mode these commands inspect the local notifier.
+AnsiChat can push incoming mentions and private messages to Gotify. Gotify delivery is asynchronous so a slow or unavailable notification service does not freeze IRC or the TUI. When configured on the relay server, alerts continue with clients attached or detached. Use `/gotify status` on an updated relay client to inspect the relay's delivery counters and last error; `/gotify test` sends a test from the relay. In direct mode these commands inspect the local notifier.
 
 ```toml
 [gotify]
 enabled = true
 url = "https://push.example.com"
-token_env = "COPPERLINE_GOTIFY_TOKEN"
+token_env = "ANSICHAT_GOTIFY_TOKEN"
 mentions = true
 private_messages = true
 priority = 5
 timeout_seconds = 5
 ```
 
-Test it from Copperline with:
+Test it from AnsiChat with:
 
 ```text
 /gotify test
@@ -568,7 +596,7 @@ Test it from Copperline with:
 
 ### Theme
 
-Copperline ships with a dark navy/copper/aqua theme, but the entire TUI palette can be overridden with `[theme]`.
+AnsiChat ships with a dark navy/copper/aqua theme, but the entire TUI palette can be overridden with `[theme]`.
 
 ```toml
 [theme]
@@ -604,7 +632,7 @@ Nick colors are chosen deterministically from `nick_colors`, so the same nicknam
 
 ## Lua scripting
 
-Copperline embeds Lua for client-side automation and customization. Scripts load from `~/.config/copperline/scripts/*.lua` by default and can register slash commands, hook IRC events, send messages/notices, write to buffers, and use raw IRC.
+AnsiChat embeds Lua for client-side automation and customization. Scripts load from `~/.config/ansichat/scripts/*.lua` by default and can register slash commands, hook IRC events, send messages/notices, write to buffers, and use raw IRC.
 
 Use:
 
@@ -612,7 +640,7 @@ Use:
 /lua reload
 ```
 
-to reload scripts without restarting Copperline.
+to reload scripts without restarting AnsiChat.
 
 The complete API lives in [`SCRIPTING.md`](SCRIPTING.md), and the source tree includes ready-to-copy examples in [`scripts/`](scripts/).
 
@@ -636,7 +664,7 @@ All action bindings are configurable under `[keybindings]`. Default controls inc
 - `Alt-K` / `Alt-J`: transcript by one line
 - `Alt-L`: bare/copy mode for terminal text selection
 - `End`: return to/follow newest messages
-- `Alt-R`: force reconnect to a Copperline relay while in relay-client mode
+- `Alt-R`: force reconnect to a AnsiChat relay while in relay-client mode
 - `Ctrl-U`: clear input
 - `Ctrl-C`: quit
 
@@ -651,7 +679,7 @@ history_next = "Down"
 relay_reconnect = "Alt+R"
 ```
 
-If you reassign a binding such as `Ctrl+U`, move any conflicting action to another key. Copperline validates configurable action keys so invalid or conflicting bindings fail clearly instead of silently doing something unexpected.
+If you reassign a binding such as `Ctrl+U`, move any conflicting action to another key. AnsiChat validates configurable action keys so invalid or conflicting bindings fail clearly instead of silently doing something unexpected.
 
 Input history is session-only and separate for each buffer. It stores both ordinary messages and slash commands. The default is 10 entries per buffer and is configurable with:
 
@@ -664,7 +692,7 @@ Set it to `0` to disable input history.
 
 Press `Alt+B` to show/hide the channel list, or `Alt+U` to show/hide the user list. Both toggles keep chat live and your draft intact.
 
-Press `Alt-L` for bare/copy mode. Copperline temporarily hides the normal UI chrome and disables terminal mouse reporting so the terminal can perform normal text selection. IRC, logging, Gotify, DCC, scripting, and incoming message state continue in the background.
+Press `Alt-L` for bare/copy mode. AnsiChat temporarily hides the normal UI chrome and disables terminal mouse reporting so the terminal can perform normal text selection. IRC, logging, Gotify, DCC, scripting, and incoming message state continue in the background.
 
 ## Commands
 
@@ -795,12 +823,12 @@ Traditional DCC establishes a direct TCP connection between IRC users. It is not
 
 For outgoing DCC SEND, configure `dcc.advertise_ip` to an address the other user can reach. NAT/router port forwarding may be necessary. Incoming filenames are reduced to their basename, downloads use exclusive file creation, and existing files are not overwritten.
 
-Copperline currently implements normal active DCC SEND and incoming DCC CHAT. Passive/reverse DCC SEND (`port 0`) and DCC RESUME are possible future additions.
+AnsiChat currently implements normal active DCC SEND and incoming DCC CHAT. Passive/reverse DCC SEND (`port 0`) and DCC RESUME are possible future additions.
 
 ## Project layout
 
 ```text
-cmd/copperline/       program entry point
+cmd/ansichat/       program entry point
 internal/config/      TOML configuration
 internal/model/       buffers and messages
 internal/irc/         direct multi-server IRC + IRCv3 backend
@@ -815,8 +843,8 @@ internal/tui/         gotui interface, navigation, input, and commands
 
 ## Mention highlighting
 
-Copperline highlights incoming messages and `/me` actions that mention your current nickname. The mention color is configurable with `theme.mention`. Your own outgoing messages are never highlighted as mentions.
+AnsiChat highlights incoming messages and `/me` actions that mention your current nickname. The mention color is configurable with `theme.mention`. Your own outgoing messages are never highlighted as mentions.
 
 ## License
 
-Copperline is licensed under the **GNU General Public License version 3 or later (GPL-3.0-or-later)**. See [`LICENSE`](LICENSE).
+AnsiChat is licensed under the **GNU General Public License version 3 or later (GPL-3.0-or-later)**. See [`LICENSE`](LICENSE).

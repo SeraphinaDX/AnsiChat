@@ -3,7 +3,7 @@ package relay
 import (
 	"testing"
 
-	ircclient "copperline/internal/irc"
+	ircclient "ansichat/internal/irc"
 )
 
 func TestCloneSnapshotIsIndependent(t *testing.T) {

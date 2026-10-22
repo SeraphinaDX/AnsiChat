@@ -26,16 +26,16 @@ jobs:
       - run: make gui
       - run: make tui
       - run: |
-          mkdir -p dist/Copperline-GUI-linux-amd64/cmd/copperline-gui
-          mkdir -p dist/Copperline-GUI-linux-amd64/packaging/linux
-          cp copperline-gui dist/Copperline-GUI-linux-amd64/
-          cp cmd/copperline-gui/Icon.png dist/Copperline-GUI-linux-amd64/cmd/copperline-gui/
-          cp packaging/linux/ca.cerberusgames.copperline.desktop dist/Copperline-GUI-linux-amd64/packaging/linux/
-          cp Makefile dist/Copperline-GUI-linux-amd64/
+          mkdir -p dist/AnsiChat-GUI-linux-amd64/cmd/ansichat-gui
+          mkdir -p dist/AnsiChat-GUI-linux-amd64/packaging/linux
+          cp ansichat-gui dist/AnsiChat-GUI-linux-amd64/
+          cp cmd/ansichat-gui/Icon.png dist/AnsiChat-GUI-linux-amd64/cmd/ansichat-gui/
+          cp packaging/linux/ca.cerberusgames.copperline.desktop dist/AnsiChat-GUI-linux-amd64/packaging/linux/
+          cp Makefile dist/AnsiChat-GUI-linux-amd64/
       - uses: actions/upload-artifact@v4
         with:
-          name: Copperline-GUI-linux-amd64
-          path: dist/Copperline-GUI-linux-amd64
+          name: AnsiChat-GUI-linux-amd64
+          path: dist/AnsiChat-GUI-linux-amd64
   android:
     runs-on: ubuntu-latest
     steps:
@@ -54,10 +54,10 @@ jobs:
       - run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018"
       - run: echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
       - run: go install fyne.io/tools/cmd/fyne@v1.7.3
-      - run: fyne package -os android/arm64 -app-id ca.cerberusgames.copperline -name Copperline -icon Icon.png
-        working-directory: cmd/copperline-gui
+      - run: fyne package -os android/arm64 -app-id ca.cerberusgames.copperline -name AnsiChat -icon Icon.png
+        working-directory: cmd/ansichat-gui
       - uses: actions/upload-artifact@v4
         with:
-          name: Copperline-Android-arm64
-          path: cmd/copperline-gui/*.apk
+          name: AnsiChat-Android-arm64
+          path: cmd/ansichat-gui/*.apk
           if-no-files-found: error

@@ -9,7 +9,7 @@ import (
 
 func TestCTCPVersionConfig(t *testing.T) {
 	for _, tc := range []struct{ input, want string }{
-		{"", "Copperline by Britney Lozza"},
+		{"", "AnsiChat by Britney Lozza"},
 		{`ctcp_version = "Another IRC client 1.0"`, "Another IRC client 1.0"},
 		{`ctcp_version = ""`, ""},
 		{`ctcp_version = "  custom reply  "`, "custom reply"},

@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"copperline/internal/config"
+	"ansichat/internal/config"
 )
 
-// Notifier sends Copperline notifications to a Gotify application. Normal
+// Notifier sends AnsiChat notifications to a Gotify application. Normal
 // notifications are queued and sent by a background worker so Gotify network
 // latency never blocks IRC processing or the TUI.
 type Notifier struct {
@@ -81,7 +81,7 @@ func (n *Notifier) Test(ctx context.Context) error {
 		return fmt.Errorf("Gotify is disabled")
 	}
 	return n.deliver(ctx, message{
-		Title:    "Copperline test",
+		Title:    "AnsiChat test",
 		Message:  "Gotify notifications are working.",
 		Priority: n.priority,
 	})

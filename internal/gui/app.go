@@ -8,11 +8,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"copperline/internal/clientcmd"
-	"copperline/internal/config"
-	"copperline/internal/irc"
-	"copperline/internal/model"
-	"copperline/internal/relay"
+	"ansichat/internal/clientcmd"
+	"ansichat/internal/config"
+	"ansichat/internal/irc"
+	"ansichat/internal/model"
+	"ansichat/internal/relay"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -93,7 +93,7 @@ func New(a fyne.App, configPath string) (*App, error) {
 		return nil, fmt.Errorf("relay identity: %w", err)
 	}
 	mobile := fyne.CurrentDevice().IsMobile()
-	g := &App{app: a, window: a.NewWindow("Copperline GUI"), storage: storage, signer: signer,
+	g := &App{app: a, window: a.NewWindow("AnsiChat GUI"), storage: storage, signer: signer,
 		configText: text, state: model.New(1000), drafts: map[string]string{}, clearThrough: map[string]uint64{}, foreground: true, done: make(chan struct{}), mobile: mobile}
 	t := config.DefaultTheme()
 	if cfg, err := config.Decode(text); err == nil {
@@ -134,7 +134,7 @@ func New(a fyne.App, configPath string) (*App, error) {
 }
 
 // SetIcon applies the caller-provided packaged icon to both the Fyne app and
-// its main window. The GUI executable embeds cmd/copperline-gui/Icon.png.
+// its main window. The GUI executable embeds cmd/ansichat-gui/Icon.png.
 func (g *App) SetIcon(icon fyne.Resource) {
 	if icon == nil {
 		return

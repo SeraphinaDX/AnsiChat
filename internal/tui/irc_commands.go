@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 	"github.com/lrstanley/girc"
 )
 

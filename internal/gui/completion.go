@@ -3,7 +3,7 @@ package gui
 import (
 	"strings"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 )
 
 // completeNick mirrors the TUI's IRC-style nickname completion in the desktop

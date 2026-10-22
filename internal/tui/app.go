@@ -8,12 +8,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"copperline/internal/config"
-	gotifynotify "copperline/internal/gotify"
-	ircclient "copperline/internal/irc"
-	"copperline/internal/logging"
-	"copperline/internal/model"
-	"copperline/internal/scripting"
+	"ansichat/internal/config"
+	gotifynotify "ansichat/internal/gotify"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/logging"
+	"ansichat/internal/model"
+	"ansichat/internal/scripting"
 
 	ui "github.com/metaspartan/gotui/v5"
 	"github.com/metaspartan/gotui/v5/widgets"
@@ -204,7 +204,7 @@ func (a *App) bindBackend(backend ircclient.Backend) {
 
 func (a *App) makeWidgets() {
 	a.sidebar = widgets.NewList()
-	a.sidebar.Title = "Copperline"
+	a.sidebar.Title = "AnsiChat"
 	a.sidebar.WrapText = false
 	a.sidebar.BorderRounded = true
 	a.theme.applyBlock(a.sidebar)
@@ -275,7 +275,7 @@ func (a *App) Run() error {
 			a.local(server, target, model.KindSystem, fmt.Sprintf("Lua: loaded %d script(s)", len(loaded)))
 		}
 	}
-	defer func() { a.irc.Stop("Copperline exiting") }()
+	defer func() { a.irc.Stop("AnsiChat exiting") }()
 	a.irc.Start()
 	a.render()
 	eventCtx, stopEvents := context.WithCancel(context.Background())
@@ -549,7 +549,7 @@ func (a *App) requestRedraw() {
 	}
 }
 
-// refreshTypingIndicator is the only periodic visual maintenance Copperline
+// refreshTypingIndicator is the only periodic visual maintenance AnsiChat
 // needs. It repaints just the input widget when a typing state expires instead
 // of rebuilding the entire interface on a timer.
 func (a *App) refreshTypingIndicator() {
@@ -726,7 +726,7 @@ func (a *App) setCopyMode(enabled bool) {
 	}
 
 	// gotui enables terminal mouse reporting during Init, so restore the same
-	// backend state it had before entering bare mode. Copperline's general.mouse
+	// backend state it had before entering bare mode. AnsiChat's general.mouse
 	// setting still decides whether received mouse events are acted upon.
 	if ui.DefaultBackend.Screen != nil {
 		ui.DefaultBackend.Screen.EnableMouse()
@@ -761,7 +761,7 @@ func (a *App) renderCopyMode() {
 	ui.Render(bare)
 }
 
-// syncOutgoingTyping translates edits in Copperline's input box into the
+// syncOutgoingTyping translates edits in AnsiChat's input box into the
 // IRCv3 +typing client tag. Active is refreshed every four seconds, paused is
 // sent after four seconds without an edit, and Manager enforces the spec's
 // three-second minimum interval between notifications for a target.

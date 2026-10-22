@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	ircclient "copperline/internal/irc"
-	"copperline/internal/model"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/model"
 )
 
 // SetRelayReconnectFactory enables the relay-client reconnect UI. The factory
@@ -31,7 +31,7 @@ func (a *App) requestRelayReconnect() {
 	old.SetMessageSink(nil)
 	old.SetEventSink(nil)
 	old.SetUpdateSink(nil)
-	old.Stop("Copperline relay force reconnect")
+	old.Stop("AnsiChat relay force reconnect")
 	a.requestRedraw()
 
 	go func() {

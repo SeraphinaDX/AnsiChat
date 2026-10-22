@@ -1,13 +1,13 @@
 package irc
 
 import (
-	"copperline/internal/dcc"
-	"copperline/internal/model"
+	"ansichat/internal/dcc"
+	"ansichat/internal/model"
 )
 
 // Backend is the IRC-facing surface consumed by the TUI. The ordinary Manager
 // implements it directly, while the relay client implements the same surface
-// over Copperline's SSH relay protocol.
+// over AnsiChat's SSH relay protocol.
 type Backend interface {
 	SetMessageSink(func(model.Message))
 	SetEventSink(func(Event))
@@ -47,7 +47,7 @@ type Backend interface {
 }
 
 // StateSnapshot is the compact state a relay server publishes to attached
-// Copperline clients. Messages are streamed separately; this contains only the
+// AnsiChat clients. Messages are streamed separately; this contains only the
 // information needed by status bars, topics, nick lists and connection state.
 type StateSnapshot struct {
 	Servers   []ServerSnapshot `json:"servers"`

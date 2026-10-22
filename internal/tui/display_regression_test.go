@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	logstore "copperline/internal/logging"
-	"copperline/internal/model"
+	logstore "ansichat/internal/logging"
+	"ansichat/internal/model"
 	"github.com/gdamore/tcell/v3"
 	ui "github.com/metaspartan/gotui/v5"
 )

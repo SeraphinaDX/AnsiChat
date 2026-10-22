@@ -10,7 +10,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"copperline/internal/version"
+	"ansichat/internal/version"
 )
 
 type snapshot struct {
@@ -35,7 +35,7 @@ func (s snapshot) format() string {
 	if kernel := clean(s.kernel, 40); kernel != "" {
 		osName += " (" + kernel + ")"
 	}
-	parts := []string{"Copperline " + version.Current, "OS: " + osName + "/" + clean(s.arch, 12)}
+	parts := []string{"AnsiChat " + version.Current, "OS: " + osName + "/" + clean(s.arch, 12)}
 	if device := clean(s.device, 40); device != "" {
 		parts = append(parts, "Device: "+device)
 	}

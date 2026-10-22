@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 	"github.com/lrstanley/girc"
 )
 

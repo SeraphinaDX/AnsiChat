@@ -244,6 +244,8 @@ func (r *runtime) installAPI() {
 		"active":  r.luaActive,
 		"nick":    r.luaNick,
 	})
+	r.L.SetGlobal("ansichat", mod)
+	// Existing user scripts continue to work with the same API table.
 	r.L.SetGlobal("copperline", mod)
 }
 

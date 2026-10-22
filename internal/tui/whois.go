@@ -3,8 +3,8 @@ package tui
 import (
 	"time"
 
-	ircclient "copperline/internal/irc"
-	"copperline/internal/model"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/model"
 )
 
 type pendingWhoisRequest struct {

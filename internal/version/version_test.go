@@ -17,10 +17,11 @@ func TestFyneMetadataMatchesApplicationVersion(t *testing.T) {
 	if !ok {
 		t.Fatal("cannot locate version test")
 	}
-	path := filepath.Join(filepath.Dir(file), "..", "..", "cmd", "copperline-gui", "FyneApp.toml")
+	path := filepath.Join(filepath.Dir(file), "..", "..", "cmd", "ansichat-gui", "FyneApp.toml")
 
 	var app struct {
 		Details struct {
+			Name    string
 			Version string
 			Build   int
 			ID      string
@@ -39,6 +40,9 @@ func TestFyneMetadataMatchesApplicationVersion(t *testing.T) {
 	if app.Details.ID != appID {
 		t.Fatalf("Fyne app ID = %q, want %q", app.Details.ID, appID)
 	}
+	if app.Details.Name != "AnsiChat" {
+		t.Fatalf("Fyne app name = %q, want AnsiChat", app.Details.Name)
+	}
 
 	manifestPath := filepath.Join(filepath.Dir(path), "AndroidManifest.xml")
 	manifest, err := os.ReadFile(manifestPath)
@@ -50,8 +54,10 @@ func TestFyneMetadataMatchesApplicationVersion(t *testing.T) {
 		Version     string `xml:"versionName,attr"`
 		Build       string `xml:"versionCode,attr"`
 		Application struct {
+			Label    string `xml:"label,attr"`
 			Icon     string `xml:"icon,attr"`
 			Activity struct {
+				Label         string `xml:"label,attr"`
 				SoftInputMode string `xml:"windowSoftInputMode,attr"`
 				Metadata      struct {
 					Name  string `xml:"name,attr"`
@@ -72,8 +78,11 @@ func TestFyneMetadataMatchesApplicationVersion(t *testing.T) {
 	if android.Application.Icon != "@mipmap/ic_launcher" {
 		t.Fatal("Android manifest must retain the adaptive launcher icon")
 	}
+	if android.Application.Label != app.Details.Name || android.Application.Activity.Label != app.Details.Name {
+		t.Fatal("Android launcher/activity labels must match the Fyne app name")
+	}
 	metadata := android.Application.Activity.Metadata
-	if metadata.Name != "android.app.lib_name" || metadata.Value != "Copperline" {
+	if metadata.Name != "android.app.lib_name" || metadata.Value != "AnsiChat" {
 		t.Fatal("Android native library must match the Fyne package name")
 	}
 
@@ -86,7 +95,10 @@ func TestFyneMetadataMatchesApplicationVersion(t *testing.T) {
 	if !strings.Contains(text, "Icon="+appID) {
 		t.Fatal("Linux desktop icon name does not match the Wayland app ID")
 	}
-	if !strings.Contains(text, "Exec=copperline-gui") {
-		t.Fatal("Linux desktop entry does not launch copperline-gui")
+	if !strings.Contains(text, "Exec=ansichat-gui") {
+		t.Fatal("Linux desktop entry does not launch ansichat-gui")
+	}
+	if !strings.Contains(text, "Name=AnsiChat\n") {
+		t.Fatal("Linux desktop entry must display AnsiChat")
 	}
 }

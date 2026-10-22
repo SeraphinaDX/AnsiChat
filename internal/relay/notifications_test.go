@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/config"
-	"copperline/internal/gotify"
-	ircclient "copperline/internal/irc"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/gotify"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/model"
 )
 
 func TestClientNotificationOwnershipWhenRelayDisabled(t *testing.T) {
