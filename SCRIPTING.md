@@ -1,28 +1,32 @@
-# Copperline Lua Scripting
+# AnsiChat Lua Scripting
 
-Copperline embeds Lua through [GopherLua](https://github.com/yuin/gopher-lua). Scripts can add slash commands, react to IRC events, send messages and notices, issue raw IRC commands, and write informational lines into Copperline buffers.
+AnsiChat embeds Lua through [GopherLua](https://github.com/yuin/gopher-lua). Scripts can add slash commands, react to IRC events, send messages and notices, issue raw IRC commands, and write informational lines into AnsiChat buffers.
 
-Lua support is intended for personal automation and client customization without requiring Copperline itself to be rebuilt.
+Lua support is intended for personal automation and client customization without requiring AnsiChat itself to be rebuilt.
+
+The API is named `ansichat`. Existing scripts using `copperline` keep working:
+both globals refer to the same API table. When the new default script directory
+is absent, an existing `~/.config/copperline/scripts/` directory is reused.
 
 ## Script directory
 
 Scripts are loaded from:
 
 ```text
-~/.config/copperline/scripts/
+~/.config/ansichat/scripts/
 ```
 
-All files ending in `.lua` are loaded in alphabetical filename order when Copperline starts.
+All files ending in `.lua` are loaded in alphabetical filename order when AnsiChat starts.
 
 The directory can be changed in `config.toml`:
 
 ```toml
 [scripting]
 enabled = true
-dir = "~/.config/copperline/scripts"
+dir = "~/.config/ansichat/scripts"
 ```
 
-Scripting is enabled by default. If the directory does not exist, Copperline creates it with mode `0700`. An empty directory has no effect on normal client behavior.
+Scripting is enabled by default. If the directory does not exist, AnsiChat creates it with mode `0700`. An empty directory has no effect on normal client behavior.
 
 To disable Lua completely:
 
@@ -31,9 +35,9 @@ To disable Lua completely:
 enabled = false
 ```
 
-## Lua commands inside Copperline
+## Lua commands inside AnsiChat
 
-Copperline provides a built-in `/lua` command:
+AnsiChat provides a built-in `/lua` command:
 
 ```text
 /lua list
@@ -48,20 +52,20 @@ Copperline provides a built-in `/lua` command:
 `/lua eval` evaluates a short piece of Lua in the current VM. It is mainly useful while developing scripts, for example:
 
 ```text
-/lua eval copperline.print("hello from Lua")
+/lua eval ansichat.print("hello from Lua")
 ```
 
-## The `copperline` API
+## The `ansichat` API
 
-Copperline exposes one global Lua table named `copperline`.
+AnsiChat exposes one global Lua table named `ansichat`.
 
-### `copperline.command(name, callback)`
+### `ansichat.command(name, callback)`
 
 Registers a new slash command.
 
 ```lua
-copperline.command("hello", function(ctx)
-    copperline.print("Hello from Lua, " .. ctx.nick)
+ansichat.command("hello", function(ctx)
+    ansichat.print("Hello from Lua, " .. ctx.nick)
 end)
 ```
 
@@ -84,13 +88,13 @@ ctx.args     everything typed after the command
 Example using arguments:
 
 ```lua
-copperline.command("slap", function(ctx)
+ansichat.command("slap", function(ctx)
     if ctx.args == "" then
-        copperline.print("usage: /slap nick")
+        ansichat.print("usage: /slap nick")
         return
     end
 
-    copperline.message(
+    ansichat.message(
         ctx.target,
         ctx.args .. " gets slapped with a large trout",
         ctx.server
@@ -98,16 +102,16 @@ copperline.command("slap", function(ctx)
 end)
 ```
 
-Copperline's built-in slash commands take precedence over Lua commands. A script cannot replace `/join`, `/msg`, `/quit`, `/lua`, or another built-in command.
+AnsiChat's built-in slash commands take precedence over Lua commands. A script cannot replace `/join`, `/msg`, `/quit`, `/lua`, or another built-in command.
 
-### `copperline.on(event, callback)`
+### `ansichat.on(event, callback)`
 
 Registers an event hook.
 
 There are two layers of hooks. `irc` receives every raw IRC event:
 
 ```lua
-copperline.on("irc", function(ev)
+ansichat.on("irc", function(ev)
     -- receives every raw IRC event
 end)
 ```
@@ -115,7 +119,7 @@ end)
 A hook may also target a particular raw IRC command:
 
 ```lua
-copperline.on("privmsg", function(ev)
+ansichat.on("privmsg", function(ev)
     -- receives PRIVMSG only
 end)
 ```
@@ -138,7 +142,7 @@ tagmsg
 
 Numeric replies can therefore be hooked by their three-digit command name.
 
-Copperline also emits semantic client events for message types that are more convenient after parsing:
+AnsiChat also emits semantic client events for message types that are more convenient after parsing:
 
 ```text
 message
@@ -150,15 +154,15 @@ startup
 For example, an IRC CTCP ACTION is available as `action`, so a script does not need to decode the CTCP payload itself:
 
 ```lua
-copperline.on("action", function(ev)
-    copperline.print(ev.source .. " performed /me: " .. ev.text)
+ansichat.on("action", function(ev)
+    ansichat.print(ev.source .. " performed /me: " .. ev.text)
 end)
 ```
 
 Each event table contains:
 
 ```text
-ev.server   Copperline server name
+ev.server   AnsiChat server name
 ev.command  lower-case IRC command
 ev.source   nickname/server source
 ev.params   Lua array containing IRC parameters
@@ -166,15 +170,15 @@ ev.tags     table of IRCv3 message tags
 ev.time     Unix timestamp
 ev.target   first IRC parameter, when present
 ev.text     final IRC parameter when the event has at least two parameters
-ev.raw      true for raw IRC events, false for semantic Copperline events
+ev.raw      true for raw IRC events, false for semantic AnsiChat events
 ```
 
 For example:
 
 ```lua
-copperline.on("privmsg", function(ev)
-    if ev.text and ev.text:lower():match("hello copperline") then
-        copperline.print(
+ansichat.on("privmsg", function(ev)
+    if ev.text and ev.text:lower():match("hello ansichat") then
+        ansichat.print(
             "Lua noticed a greeting from " .. ev.source,
             ev.server,
             ev.target
@@ -186,17 +190,17 @@ end)
 There is also a `startup` event. It runs after all scripts have been loaded or reloaded:
 
 ```lua
-copperline.on("startup", function()
-    copperline.print("My scripts are loaded")
+ansichat.on("startup", function()
+    ansichat.print("My scripts are loaded")
 end)
 ```
 
-### `copperline.print(text [, server [, target]])`
+### `ansichat.print(text [, server [, target]])`
 
-Writes a Copperline system line to a buffer without sending anything to IRC.
+Writes a AnsiChat system line to a buffer without sending anything to IRC.
 
 ```lua
-copperline.print("script loaded")
+ansichat.print("script loaded")
 ```
 
 If `server` and `target` are omitted, the currently selected buffer is used.
@@ -204,57 +208,57 @@ If `server` and `target` are omitted, the currently selected buffer is used.
 Explicit destination:
 
 ```lua
-copperline.print("hello #go-nuts", "libera", "#go-nuts")
+ansichat.print("hello #go-nuts", "libera", "#go-nuts")
 ```
 
-Lines written with `copperline.print` go through Copperline's normal buffer and logging path.
+Lines written with `ansichat.print` go through AnsiChat's normal buffer and logging path.
 
-### `copperline.message(target, text [, server])`
+### `ansichat.message(target, text [, server])`
 
 Sends an IRC `PRIVMSG`.
 
 ```lua
-copperline.message("#go-nuts", "hello from Lua")
+ansichat.message("#go-nuts", "hello from Lua")
 ```
 
 The current server is used when the third argument is omitted.
 
 ```lua
-copperline.message("#debian", "hello OFTC", "oftc")
+ansichat.message("#debian", "hello OFTC", "oftc")
 ```
 
-### `copperline.notice(target, text [, server])`
+### `ansichat.notice(target, text [, server])`
 
 Sends an IRC `NOTICE`.
 
 ```lua
-copperline.notice("SomeNick", "hello", "libera")
+ansichat.notice("SomeNick", "hello", "libera")
 ```
 
-### `copperline.raw(line [, server])`
+### `ansichat.raw(line [, server])`
 
 Sends a raw IRC protocol line.
 
 ```lua
-copperline.raw("WHO #go-nuts")
+ansichat.raw("WHO #go-nuts")
 ```
 
 or:
 
 ```lua
-copperline.raw("MODE #go-nuts +b", "libera")
+ansichat.raw("MODE #go-nuts +b", "libera")
 ```
 
 This is deliberately powerful. Invalid raw IRC can disconnect you, trigger server flood protection, or perform destructive IRC operations. Scripts using `raw` should be treated with the same care as commands typed manually with `/raw`.
 
-### `copperline.active()`
+### `ansichat.active()`
 
 Returns information about the currently selected buffer:
 
 ```lua
-local ctx = copperline.active()
+local ctx = ansichat.active()
 
-copperline.print(
+ansichat.print(
     "server=" .. ctx.server ..
     " target=" .. ctx.target ..
     " nick=" .. ctx.nick
@@ -269,23 +273,23 @@ target
 nick
 ```
 
-### `copperline.nick([server])`
+### `ansichat.nick([server])`
 
 Returns your current nickname on a server.
 
 ```lua
-local mynick = copperline.nick()
+local mynick = ansichat.nick()
 ```
 
 or:
 
 ```lua
-local libera_nick = copperline.nick("libera")
+local libera_nick = ansichat.nick("libera")
 ```
 
 ## Bundled example scripts
 
-The source tree includes a [`scripts/`](scripts/) directory containing small, commented examples that use the real Copperline Lua API:
+The source tree includes a [`scripts/`](scripts/) directory containing small, commented examples that use the real AnsiChat Lua API:
 
 ```text
 scripts/hello.lua
@@ -296,14 +300,14 @@ scripts/connection.lua
 scripts/debug-events.lua
 ```
 
-They are **not loaded automatically from the repository directory**. Copy only the examples you want into Copperline's configured script directory, for example:
+They are **not loaded automatically from the repository directory**. Copy only the examples you want into AnsiChat's configured script directory, for example:
 
 ```sh
-mkdir -p ~/.config/copperline/scripts
-cp scripts/wave.lua ~/.config/copperline/scripts/
+mkdir -p ~/.config/ansichat/scripts
+cp scripts/wave.lua ~/.config/ansichat/scripts/
 ```
 
-Then reload them without restarting Copperline:
+Then reload them without restarting AnsiChat:
 
 ```text
 /lua reload
@@ -316,28 +320,28 @@ See [`scripts/README.md`](scripts/README.md) for a short description of every ex
 Save this as:
 
 ```text
-~/.config/copperline/scripts/example.lua
+~/.config/ansichat/scripts/example.lua
 ```
 
 ```lua
-copperline.on("startup", function()
-    copperline.print("example.lua loaded")
+ansichat.on("startup", function()
+    ansichat.print("example.lua loaded")
 end)
 
-copperline.command("wave", function(ctx)
+ansichat.command("wave", function(ctx)
     if ctx.target == "*server*" then
-        copperline.print("Select a channel or query first")
+        ansichat.print("Select a channel or query first")
         return
     end
 
-    copperline.message(ctx.target, "o/", ctx.server)
+    ansichat.message(ctx.target, "o/", ctx.server)
 end)
 
-copperline.on("privmsg", function(ev)
-    local mynick = copperline.nick(ev.server)
+ansichat.on("privmsg", function(ev)
+    local mynick = ansichat.nick(ev.server)
 
     if ev.text and mynick ~= "" and ev.text:lower():match(mynick:lower()) then
-        copperline.print(
+        ansichat.print(
             "Lua mention hook: " .. ev.source .. " mentioned you",
             ev.server,
             ev.target
@@ -346,7 +350,7 @@ copperline.on("privmsg", function(ev)
 end)
 ```
 
-Then reload without restarting Copperline:
+Then reload without restarting AnsiChat:
 
 ```text
 /lua reload
@@ -360,21 +364,21 @@ and use:
 
 ## Concurrency model
 
-Copperline's IRC connections, DCC work, notifications, timers, and UI already use Go concurrency. The Lua VM is intentionally different: all Lua callbacks are serialized through one scripting goroutine.
+AnsiChat's IRC connections, DCC work, notifications, timers, and UI already use Go concurrency. The Lua VM is intentionally different: all Lua callbacks are serialized through one scripting goroutine.
 
-This is important because one GopherLua state should not be called concurrently from unrelated IRC goroutines. Copperline therefore queues IRC hook events and executes Lua callbacks one at a time.
+This is important because one GopherLua state should not be called concurrently from unrelated IRC goroutines. AnsiChat therefore queues IRC hook events and executes Lua callbacks one at a time.
 
-IRC processing itself is not allowed to block waiting for Lua. The event queue is bounded; if a script falls extremely far behind, Copperline drops scripting hook events rather than stalling the IRC connection.
+IRC processing itself is not allowed to block waiting for Lua. The event queue is bounded; if a script falls extremely far behind, AnsiChat drops scripting hook events rather than stalling the IRC connection.
 
 Custom slash commands are executed synchronously from the UI because their result is user initiated. A badly written command callback that never returns can therefore make the UI appear stuck even though the IRC networking goroutines continue to run.
 
 ## Script errors
 
-A script that fails while loading is reported in Copperline as a Lua error. Copperline never installs a half-loaded replacement VM: if `/lua reload` fails, the previous working set of scripts remains active. On initial startup, a failed load leaves scripting with no newly loaded script set until the files are corrected and reloaded.
+A script that fails while loading is reported in AnsiChat as a Lua error. AnsiChat never installs a half-loaded replacement VM: if `/lua reload` fails, the previous working set of scripts remains active. On initial startup, a failed load leaves scripting with no newly loaded script set until the files are corrected and reloaded.
 
-Errors raised by an event hook are shown in the active Copperline buffer and do not stop later IRC processing.
+Errors raised by an event hook are shown in the active AnsiChat buffer and do not stop later IRC processing.
 
-For custom commands, the error is shown as a normal Copperline error line.
+For custom commands, the error is shown as a normal AnsiChat error line.
 
 After correcting a script, run:
 
@@ -384,7 +388,7 @@ After correcting a script, run:
 
 ## Security
 
-Lua scripts run locally as part of Copperline and should be considered trusted code. They can send IRC messages and raw protocol commands using your connected identity.
+Lua scripts run locally as part of AnsiChat and should be considered trusted code. They can send IRC messages and raw protocol commands using your connected identity.
 
 Do not install random scripts without reading them first.
 
@@ -392,4 +396,4 @@ The scripting API is intended as a convenience boundary, not as a security sandb
 
 ## Lua compatibility
 
-Copperline uses GopherLua, which implements Lua 5.1 semantics with selected additions. Scripts should generally be written as Lua 5.1 code.
+AnsiChat uses GopherLua, which implements Lua 5.1 semantics with selected additions. Scripts should generally be written as Lua 5.1 code.

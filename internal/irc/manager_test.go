@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 
 	"github.com/lrstanley/girc"
 )
@@ -42,7 +42,7 @@ func writeTestClientCertificate(t *testing.T) (string, string) {
 	}
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(1),
-		Subject:      pkix.Name{CommonName: "copperline-test"},
+		Subject:      pkix.Name{CommonName: "ansichat-test"},
 		NotBefore:    time.Now().Add(-time.Minute),
 		NotAfter:     time.Now().Add(time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,

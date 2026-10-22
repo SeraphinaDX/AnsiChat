@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 )
 
 type historySnapshot struct {
@@ -80,7 +80,7 @@ func (s *Server) saveHistory() error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
-	f, err := os.CreateTemp(filepath.Dir(path), ".copperline-history-*")
+	f, err := os.CreateTemp(filepath.Dir(path), ".ansichat-history-*")
 	if err != nil {
 		return err
 	}

@@ -1,11 +1,11 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Copperline
+Name=AnsiChat
 GenericName=IRC Client
 Comment=IRC client with relay support
-Exec=copperline-gui
+Exec=ansichat-gui
 Icon=ca.cerberusgames.copperline
 Terminal=false
 Categories=Network;IRCClient;
-StartupWMClass=Copperline
+StartupWMClass=AnsiChat

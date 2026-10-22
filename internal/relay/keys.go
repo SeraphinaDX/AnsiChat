@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"copperline/internal/config"
+	"ansichat/internal/config"
 
 	"golang.org/x/crypto/ssh"
 )

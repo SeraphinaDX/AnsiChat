@@ -1,6 +1,6 @@
 package tui
 
-import "copperline/internal/model"
+import "ansichat/internal/model"
 
 type inputDraft struct {
 	text    string

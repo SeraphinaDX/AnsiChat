@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 )
 
 func newCatchupApp(t *testing.T) *App {

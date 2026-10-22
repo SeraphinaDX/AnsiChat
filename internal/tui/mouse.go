@@ -230,7 +230,7 @@ func (a *App) resumeFollowAtBottom() {
 	}
 }
 
-// scrollTranscriptBottom is the only safe way Copperline should ask gotui's
+// scrollTranscriptBottom is the only safe way AnsiChat should ask gotui's
 // List to follow the bottom. gotui v5.0.3 sets SelectedRow to -1 when Rows is
 // empty; on the next Draw that can make its private topRow negative and panic.
 func (a *App) scrollTranscriptBottom() {

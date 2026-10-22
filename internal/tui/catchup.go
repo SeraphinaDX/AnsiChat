@@ -3,7 +3,7 @@ package tui
 import (
 	"fmt"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 )
 
 func (a *App) selectNextUnread() {

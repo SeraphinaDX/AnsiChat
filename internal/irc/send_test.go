@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/config"
+	"ansichat/internal/config"
 	"github.com/lrstanley/girc"
 )
 

@@ -5,15 +5,15 @@ import (
 	"strings"
 	"time"
 
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 
 	"github.com/gdamore/tcell/v3"
 	ui "github.com/metaspartan/gotui/v5"
 )
 
 func (a *App) handleUIEvent(e ui.Event) {
-	// In bare/copy mode the terminal owns the mouse and Copperline leaves the
+	// In bare/copy mode the terminal owns the mouse and AnsiChat leaves the
 	// displayed transcript frozen. Only the toggle, quit, and resize need to be
 	// handled until the normal interface is restored.
 	if a.copyMode {
@@ -267,7 +267,7 @@ func (a *App) handleKey(e ui.Event) {
 		// Normal chat is safety-sensitive in relay mode. Do not erase the user's
 		// text until the backend has acknowledged the send request. Previously the
 		// input was cleared first, so a half-dead SSH attachment could silently eat
-		// a message while Copperline was still displaying cached IRC state.
+		// a message while AnsiChat was still displaying cached IRC state.
 		if !strings.HasPrefix(line, "/") {
 			if a.pasteSend != nil && a.pasteSend.active {
 				if b := a.state.CurrentInfo(); b != nil {

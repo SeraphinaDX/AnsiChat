@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/config"
-	ircclient "copperline/internal/irc"
-	"copperline/internal/logging"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/logging"
+	"ansichat/internal/model"
 
 	ui "github.com/metaspartan/gotui/v5"
 	"github.com/metaspartan/gotui/v5/widgets"
@@ -203,7 +203,7 @@ func TestTranscriptCachePreservesBacklogAndLiveRows(t *testing.T) {
 		transcriptCaches: make(map[string]transcriptCache),
 	}
 
-	key := "libera\x00#copperline"
+	key := "libera\x00#ansichat"
 	app.saveTranscriptCache(key, transcriptCache{
 		rows:        list.Rows,
 		start:       12,
@@ -640,15 +640,15 @@ func TestIgnoreOutputUsesCurrentBuffer(t *testing.T) {
 		Scripting: config.ScriptingConfig{Enabled: &disabled},
 	}
 	backend := &ignoreBackend{knownTargetsBackend: knownTargetsBackend{
-		servers: map[string][]string{"libera": {"#copperline"}},
+		servers: map[string][]string{"libera": {"#ansichat"}},
 	}}
 	app := NewWithBackend(cfg, backend)
-	app.state.Select("libera", "#copperline")
+	app.state.Select("libera", "#ansichat")
 	app.execute("/ignore add Alice")
-	if backend.server != "libera" || backend.channel != "#copperline" || backend.command != "add Alice" {
+	if backend.server != "libera" || backend.channel != "#ansichat" || backend.command != "add Alice" {
 		t.Fatalf("ignore request = %q/%q/%q", backend.server, backend.channel, backend.command)
 	}
-	buffer := app.state.Find("libera", "#copperline")
+	buffer := app.state.Find("libera", "#ansichat")
 	if buffer == nil || len(buffer.Messages) != 1 || buffer.Messages[0].Text != "ignored Alice [libera / all channels]" {
 		t.Fatalf("ignore output was not routed to current buffer: %#v", buffer)
 	}
@@ -669,11 +669,11 @@ func TestWhoisRepliesReturnToOriginatingBuffer(t *testing.T) {
 		Scripting: config.ScriptingConfig{Enabled: &disabled},
 	}
 	backend := &whoisBackend{knownTargetsBackend: knownTargetsBackend{
-		servers: map[string][]string{"libera": {"#copperline"}},
+		servers: map[string][]string{"libera": {"#ansichat"}},
 	}}
 	app := NewWithBackend(cfg, backend)
-	app.state.Select("libera", "#copperline")
-	if err := app.requestWhois("libera", "#copperline", "Alice"); err != nil {
+	app.state.Select("libera", "#ansichat")
+	if err := app.requestWhois("libera", "#ansichat", "Alice"); err != nil {
 		t.Fatal(err)
 	}
 	if backend.requestedServer != "libera" || backend.requestedNick != "Alice" {
@@ -690,7 +690,7 @@ func TestWhoisRepliesReturnToOriginatingBuffer(t *testing.T) {
 		app.onIRCEvent(ev)
 	}
 
-	channel := app.state.Find("libera", "#copperline")
+	channel := app.state.Find("libera", "#ansichat")
 	if channel == nil || len(channel.Messages) != 6 {
 		t.Fatalf("WHOIS output was not routed to channel: %#v", channel)
 	}

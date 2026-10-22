@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 )
 
 type closeBackend struct {

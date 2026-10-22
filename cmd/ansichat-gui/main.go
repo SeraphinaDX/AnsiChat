@@ -1,4 +1,4 @@
-// Copperline GUI is the shared desktop/Android relay frontend.
+// AnsiChat GUI is the shared desktop/Android relay frontend.
 package main
 
 import (
@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"copperline/internal/gui"
-	buildversion "copperline/internal/version"
+	"ansichat/internal/gui"
+	buildversion "ansichat/internal/version"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 )
@@ -19,7 +19,7 @@ import (
 //go:embed Icon.png
 var iconData []byte
 
-var icon = fyne.NewStaticResource("copperline.png", iconData)
+var icon = fyne.NewStaticResource("ansichat.png", iconData)
 
 func main() {
 	configPath := flag.String("config", "", "optional desktop relay TOML file (otherwise use GUI app storage)")
@@ -27,14 +27,15 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Println("Copperline GUI", buildversion.Current)
+		fmt.Println("AnsiChat GUI", buildversion.Current)
 		return
 	}
 
+	// Keep Android upgrade identity and the existing private config/key storage.
 	a := app.NewWithID("ca.cerberusgames.copperline")
 	g, err := gui.New(a, *configPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Copperline GUI:", err)
+		fmt.Fprintln(os.Stderr, "AnsiChat GUI:", err)
 		os.Exit(1)
 	}
 	g.SetIcon(icon)

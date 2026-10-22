@@ -1,13 +1,14 @@
 package relay
 
 import (
-	"copperline/internal/irc"
-	"copperline/internal/model"
+	"ansichat/internal/irc"
+	"ansichat/internal/model"
 )
 
 const (
 	protocolVersion = 2
-	channelType     = "copperline-relay@copperline"
+	// Preserve the wire identifier so existing Copperline relays still connect.
+	channelType = "copperline-relay@copperline"
 )
 
 type frame struct {

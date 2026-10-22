@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/config"
-	ircclient "copperline/internal/irc"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/model"
 	"github.com/lrstanley/girc"
 )
 

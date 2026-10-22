@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 )
 
 var unsafeName = regexp.MustCompile(`[^A-Za-z0-9._#&+!-]+`)
@@ -33,7 +33,7 @@ func New(enabled bool, dir, timestamp string) *Logger {
 	}
 }
 
-// BeginBuffer records the byte offset where this Copperline process first
+// BeginBuffer records the byte offset where this AnsiChat process first
 // became aware of a buffer. It must be called before a current-session message
 // is exposed to the TUI. Doing that ordering explicitly prevents a first-view
 // redraw from racing the logger and mistaking freshly received traffic for
@@ -129,7 +129,7 @@ func tailLines(f *os.File, n int) ([]string, error) {
 
 // tailLinesAt is the bounded form of tailLines. end is an exclusive byte
 // offset, allowing the caller to read history that existed before this
-// Copperline process started appending to the file.
+// AnsiChat process started appending to the file.
 func tailLinesAt(f *os.File, n int, end int64) ([]string, error) {
 	if n <= 0 || end <= 0 {
 		return nil, nil
@@ -180,7 +180,7 @@ func tailLinesAt(f *os.File, n int, end int64) ([]string, error) {
 }
 
 // BacklogTail returns the last n meaningful pre-session log lines for display
-// when a conversational buffer is opened. Older Copperline versions logged routine channel-sync
+// when a conversational buffer is opened. Older AnsiChat versions logged routine channel-sync
 // numerics, so filter those legacy entries here rather than resurrecting the
 // protocol noise through the persistent backlog feature.
 func (l *Logger) BacklogTail(server, target string, n int) ([]string, error) {

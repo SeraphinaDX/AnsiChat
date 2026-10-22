@@ -1,7 +1,7 @@
 package clientcmd
 
 import (
-	"copperline/internal/irc"
+	"ansichat/internal/irc"
 	"errors"
 	"strings"
 	"testing"
@@ -22,7 +22,7 @@ func TestFlexUsesCurrentChannelOrQueryAndPropagatesSendErrors(t *testing.T) {
 				t.Fatalf("failed flex send did not return the backend error: %v", err)
 			}
 			if b.action != "message" || b.server != "Libera" || b.target != target ||
-				!strings.HasPrefix(b.text, "Copperline ") || !strings.Contains(b.text, "OS:") || !strings.Contains(b.text, "CPU:") {
+				!strings.HasPrefix(b.text, "AnsiChat ") || !strings.Contains(b.text, "OS:") || !strings.Contains(b.text, "CPU:") {
 				t.Fatalf("bad flex dispatch: %#v", b)
 			}
 		}

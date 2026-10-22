@@ -16,7 +16,7 @@ import (
 // shifts the previously hidden row upward, which looks exactly like chat is
 // one message behind.
 //
-// Keep the public List API that the rest of Copperline already uses, but draw
+// Keep the public List API that the rest of AnsiChat already uses, but draw
 // the visible window from the selected row backwards in physical wrapped
 // lines. With live-follow SelectedRow is the newest message, so its final
 // wrapped line is always visible at the bottom of the transcript.
@@ -176,7 +176,7 @@ func (t *transcriptList) wrapLogicalRow(row, width int) [][]ui.Cell {
 		}
 	}
 
-	// Preserve List's selected-row styling semantics. Copperline normally sets
+	// Preserve List's selected-row styling semantics. AnsiChat normally sets
 	// SelectedStyle == TextStyle for transcripts, but keeping this behavior here
 	// makes the wrapper faithful if that ever changes.
 	if row == t.SelectedRow {

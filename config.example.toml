@@ -1,17 +1,17 @@
 [general]
 nick = "myNick"
 user = "myNick"
-real_name = "Copperline User"
+real_name = "AnsiChat User"
 # Optional custom CTCP VERSION response. Omit for the default; "" disables replies.
 # In relay mode, set this on the relay server and restart it.
 # ctcp_version = "My IRC client"
 logging = true
-log_dir = "~/.local/state/copperline/logs"
+log_dir = "~/.local/state/ansichat/logs"
 # Persistent ignore rules. In relay mode this belongs on the relay server.
-ignore_file = "~/.config/copperline/ignores.toml"
+ignore_file = "~/.config/ansichat/ignores.toml"
 # Case-insensitive whole words/phrases, in addition to your nickname.
 # Configure on the relay server for relay-owned Gotify mention alerts.
-highlight_words = [] # e.g. ["Copperline", "alternateNick", "server down"]
+highlight_words = [] # e.g. ["AnsiChat", "alternateNick", "server down"]
 timestamp = "15:04"
 mouse = true
 # Sort channels and queries by name within each network (case-insensitive).
@@ -36,9 +36,9 @@ reconnect_seconds = 10
 # Automatically append HTTP(S) links as JSON Lines (time/server/target/nick/url).
 # Blank disables collection. In relay mode, configure this on the relay server.
 [urls]
-file = "" # e.g. "~/.local/state/copperline/urls.jsonl"
+file = "" # e.g. "~/.local/state/ansichat/urls.jsonl"
 
-# Copperline can run normally (direct), as a headless IRC relay with its own
+# AnsiChat can run normally (direct), as a headless IRC relay with its own
 # embedded SSH server (server), or as a local TUI attached to such a relay
 # (client). Direct mode preserves the traditional behavior.
 [relay]
@@ -49,10 +49,10 @@ mode = "direct"
 # missing and re-read on every login, so adding a client key needs no restart.
 # listen = "0.0.0.0:2222"
 # user = "copperline"
-# host_key = "~/.config/copperline/relay_host_ed25519"
-# authorized_keys = "~/.config/copperline/relay_authorized_keys"
+# host_key = "~/.config/ansichat/relay_host_ed25519"
+# authorized_keys = "~/.config/ansichat/relay_authorized_keys"
 # Optional structured replay history, independent of general.logging.
-# history_file = "~/.local/state/copperline/relay-history.json"
+# history_file = "~/.local/state/ansichat/relay-history.json"
 
 # Relay-client settings. A dedicated Ed25519 client key is generated at
 # private_key (plus private_key.pub) if it does not exist. Copy the .pub file
@@ -60,12 +60,12 @@ mode = "direct"
 # relay server at startup.
 # address = "relay.example.com:2222"
 # user = "copperline"
-# private_key = "~/.config/copperline/relay_client_ed25519"
-# private_key_passphrase_env = "COPPERLINE_RELAY_KEY_PASSPHRASE"
+# private_key = "~/.config/ansichat/relay_client_ed25519"
+# private_key_passphrase_env = "ANSICHAT_RELAY_KEY_PASSPHRASE"
 # host_key_fingerprint = "SHA256:replace-with-server-fingerprint"
 # insecure_skip_host_key_check = false
 
-# Optional keyboard bindings. These defaults match Copperline's built-in keys.
+# Optional keyboard bindings. These defaults match AnsiChat's built-in keys.
 # Supported forms include Ctrl+letter, Alt+letter, F1-F64, PageUp/PageDown,
 # Up/Down, Home/End, Tab, Escape, and gotui-style IDs such as <M-n>.
 [keybindings]
@@ -94,7 +94,7 @@ quit = "Ctrl+C"
 # Relay-client only. Also shown as a clickable status-bar control.
 relay_reconnect = "Alt+R"
 
-# Optional UI theme. Copperline uses these values by default if [theme] is omitted.
+# Optional UI theme. AnsiChat uses these values by default if [theme] is omitted.
 # Colors may be #RRGGBB true-color values or gotui names such as
 # red, green, yellow, blue, cyan, magenta, white, grey, orange, purple,
 # pink, gold, teal, turquoise, violet, lightblue, lightgreen, skyblue, etc.
@@ -133,7 +133,7 @@ nick_colors = [
 # this directory at startup and can be reloaded with /lua reload.
 [scripting]
 enabled = true
-dir = "~/.config/copperline/scripts"
+dir = "~/.config/ansichat/scripts"
 
 [dcc]
 enabled = true
@@ -144,11 +144,11 @@ listen_addr = "0.0.0.0:0"
 
 # Optional Gotify notifications for incoming mentions and private messages.
 # Create a Gotify application and export its application token before starting
-# Copperline. An inline token is supported but token_env is recommended.
+# AnsiChat. An inline token is supported but token_env is recommended.
 [gotify]
 enabled = false
 url = "https://push.example.com"
-token_env = "COPPERLINE_GOTIFY_TOKEN"
+token_env = "ANSICHAT_GOTIFY_TOKEN"
 # token = "A..."
 mentions = true
 private_messages = true
@@ -162,12 +162,12 @@ port = 6697
 tls = true
 # Optional TLS client certificate for CertFP and SASL EXTERNAL. The
 # certificate and key may share one combined PEM file.
-# tls_cert_file = "~/.config/copperline/certs/libera.pem"
-# tls_key_file = "~/.config/copperline/certs/libera.pem"
+# tls_cert_file = "~/.config/ansichat/certs/libera.pem"
+# tls_key_file = "~/.config/ansichat/certs/libera.pem"
 auto_connect = true
 nick = "myNick"
 channels = ["#go-nuts", "#linux"]
-# Extra capabilities are added to Copperline's built-in IRCv3 request set.
+# Extra capabilities are added to AnsiChat's built-in IRCv3 request set.
 caps = []
 
 [server.sasl]

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 
 	ui "github.com/metaspartan/gotui/v5"
 )
@@ -176,7 +176,7 @@ func (a *App) rebuildCurrent() {
 		a.userScroll = 0
 		a.topic.Text = ""
 		a.input.Title = "Message"
-		a.status.Text = "Copperline"
+		a.status.Text = "AnsiChat"
 		return
 	}
 
@@ -247,7 +247,7 @@ func (a *App) rebuildCurrent() {
 
 	// Pull only messages that arrived after the rows currently cached by the
 	// TUI. A first visit with persistent backlog starts at total zero so all
-	// retained messages from this Copperline session are rendered as live rows.
+	// retained messages from this AnsiChat session are rendered as live rows.
 	window := a.state.CurrentWindow(a.transcriptTotal)
 	if bufferChanged && !a.transcriptFromLog {
 		window = a.state.CurrentWindow(0)
@@ -411,7 +411,7 @@ func (a *App) rebuildCurrent() {
 		return
 	}
 	if a.relayReconnecting.Load() {
-		a.status.Text = " Re-establishing Copperline SSH relay connection - please wait "
+		a.status.Text = " Re-establishing AnsiChat SSH relay connection - please wait "
 		return
 	}
 	if loading, progress := a.startupLoading(); loading {
@@ -439,7 +439,7 @@ func (a *App) rebuildCurrent() {
 
 // loadConversationLogBacklog initializes a newly selected conversational
 // buffer (channel or private-message query) from the last few plaintext log
-// lines from before this Copperline session. Server buffers are deliberately
+// lines from before this AnsiChat session. Server buffers are deliberately
 // excluded. Returning true means the caller should keep that muted context and
 // then render all retained current-session messages from model.State using
 // normal live styling.
@@ -479,7 +479,7 @@ func (a *App) loadConversationLogBacklog(b *model.BufferInfo) bool {
 	}
 	a.transcriptFromLog = true
 	a.transcriptBacklogRows = len(lines)
-	// State totals start at zero for each Copperline process. Starting the live
+	// State totals start at zero for each AnsiChat process. Starting the live
 	// cursor at zero is intentional: a channel or PM query may have accumulated
 	// messages for hours before the user first opens it, and those messages are
 	// still current-session traffic, not muted persistent history.

@@ -1,4 +1,4 @@
-module copperline
+module ansichat
 
 go 1.26.0
 

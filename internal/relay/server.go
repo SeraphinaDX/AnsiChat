@@ -12,11 +12,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"copperline/internal/config"
-	"copperline/internal/gotify"
-	ircclient "copperline/internal/irc"
-	"copperline/internal/logging"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/gotify"
+	ircclient "ansichat/internal/irc"
+	"ansichat/internal/logging"
+	"ansichat/internal/model"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -119,7 +119,7 @@ func (s *Server) Run(ctx context.Context) error {
 	historyDone := make(chan struct{})
 	go func() { defer close(historyDone); s.historyLoop(historyCtx) }()
 	defer func() {
-		s.irc.Stop("Copperline relay stopping")
+		s.irc.Stop("AnsiChat relay stopping")
 		stopHistory()
 		<-historyDone
 		if err := s.saveHistory(); err != nil {
@@ -163,7 +163,7 @@ func (s *Server) serveConn(conn net.Conn) {
 
 	for newChannel := range chans {
 		if newChannel.ChannelType() != channelType {
-			_ = newChannel.Reject(ssh.UnknownChannelType, "Copperline relay accepts only its private relay channel")
+			_ = newChannel.Reject(ssh.UnknownChannelType, "AnsiChat relay accepts only its private relay channel")
 			continue
 		}
 		ch, requests, err := newChannel.Accept()
@@ -185,7 +185,7 @@ func (p *serverPeer) serve() {
 
 	var hello frame
 	if err := p.dec.Decode(&hello); err != nil || hello.Type != "hello" || hello.Version != protocolVersion {
-		_ = p.send(frame{Type: "error", Error: fmt.Sprintf("Copperline relay protocol %d required", protocolVersion)})
+		_ = p.send(frame{Type: "error", Error: fmt.Sprintf("AnsiChat relay protocol %d required", protocolVersion)})
 		return
 	}
 	p.notifications = hello.Bool

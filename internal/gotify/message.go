@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 )
 
 // Notification applies the same eligibility rules in direct and relay modes.
@@ -21,10 +21,10 @@ func Notification(cfg config.GotifyConfig, msg model.Message, self string) (titl
 		body = fmt.Sprintf("* %s %s", msg.Nick, msg.Text)
 	}
 	if (msg.Mention || model.ContainsNickMention(msg.Text, self)) && cfg.MentionsEnabled() {
-		return fmt.Sprintf("Copperline mention: %s / %s", msg.Server, msg.Target), body
+		return fmt.Sprintf("AnsiChat mention: %s / %s", msg.Server, msg.Target), body
 	}
 	if msg.Target != "" && msg.Target != "*server*" && !model.IsChannel(msg.Target) && cfg.PrivateMessagesEnabled() {
-		return fmt.Sprintf("Copperline PM: %s on %s", msg.Nick, msg.Server), body
+		return fmt.Sprintf("AnsiChat PM: %s on %s", msg.Nick, msg.Server), body
 	}
 	return "", ""
 }

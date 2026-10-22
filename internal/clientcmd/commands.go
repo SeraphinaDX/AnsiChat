@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"copperline/internal/irc"
-	"copperline/internal/model"
-	"copperline/internal/sysinfo"
+	"ansichat/internal/irc"
+	"ansichat/internal/model"
+	"ansichat/internal/sysinfo"
 )
 
 type Context struct {

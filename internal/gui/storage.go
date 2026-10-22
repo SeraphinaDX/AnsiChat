@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"copperline/internal/config"
+	"ansichat/internal/config"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/storage"
 	"golang.org/x/crypto/ssh"
@@ -58,7 +58,7 @@ func (s Storage) LoadConfig() (string, error) {
 func (s Storage) SaveConfig(data string) error {
 	if s.ConfigPath != "" {
 		path := s.ConfigPath
-		f, err := os.CreateTemp(filepath.Dir(path), ".copperline-config-*")
+		f, err := os.CreateTemp(filepath.Dir(path), ".ansichat-config-*")
 		if err != nil {
 			return err
 		}
@@ -134,7 +134,7 @@ func validateGUIConfig(data string) error {
 		return err
 	}
 	if cfg.Relay.ModeValue() != "client" {
-		return fmt.Errorf("Copperline GUI requires [relay].mode = \"client\"")
+		return fmt.Errorf("AnsiChat GUI requires [relay].mode = \"client\"")
 	}
 	if cfg.Relay.InsecureSkipHostKey {
 		return fmt.Errorf("set host_key_fingerprint; the GUI requires verified relay host keys")

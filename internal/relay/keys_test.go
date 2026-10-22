@@ -56,7 +56,7 @@ func TestHostKeyGenerationIsStable(t *testing.T) {
 	}
 }
 
-func TestAuthorizedKeysLoadsCopperlinePublicKey(t *testing.T) {
+func TestAuthorizedKeysLoadsAnsiChatPublicKey(t *testing.T) {
 	dir := t.TempDir()
 	keyPath := filepath.Join(dir, "client")
 	signer, _, pubPath, err := loadOrCreateClientSigner(keyPath, "")

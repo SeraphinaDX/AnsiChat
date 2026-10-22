@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/test"
 )
@@ -92,7 +92,7 @@ func TestPhoneAndDesktopLayoutAndDrafts(t *testing.T) {
 	g.state.Ensure("Libera", "#go")
 	g.state.Ensure("Libera", "#linux")
 	g.state.Select("Libera", "#go")
-	for i, line := range []string{"Welcome to Copperline.", "The same relay client runs on desktop and Android.", "Long messages wrap to the available width instead of pushing the composer off the phone screen."} {
+	for i, line := range []string{"Welcome to AnsiChat.", "The same relay client runs on desktop and Android.", "Long messages wrap to the available width instead of pushing the composer off the phone screen."} {
 		g.state.Add(model.Message{RelayID: line, Time: time.Date(2026, 10, 5, 9, 14+i, 0, 0, time.UTC), Server: "Libera", Target: "#go", Nick: "alice", Text: line, Kind: model.KindMessage})
 	}
 	g.refresh()
@@ -117,7 +117,7 @@ func TestPhoneAndDesktopLayoutAndDrafts(t *testing.T) {
 		if size.Width < 800 && g.chat.Size().Width != g.root.Size().Width {
 			t.Fatal("chat did not fill phone")
 		}
-		if out := os.Getenv("COPPERLINE_GUI_PREVIEW_DIR"); out != "" {
+		if out := os.Getenv("ANSICHAT_GUI_PREVIEW_DIR"); out != "" {
 			os.MkdirAll(out, 0755)
 			name := "desktop.png"
 			if size.Width < 800 {
@@ -213,7 +213,7 @@ func TestPhoneSetupFitsScreen(t *testing.T) {
 	}
 	defer g.shutdown()
 	g.window.Resize(fyne.NewSize(360, 640))
-	if out := os.Getenv("COPPERLINE_GUI_PREVIEW_DIR"); out != "" {
+	if out := os.Getenv("ANSICHAT_GUI_PREVIEW_DIR"); out != "" {
 		f, err := os.Create(filepath.Join(out, "phone-setup.png"))
 		if err != nil {
 			t.Fatal(err)

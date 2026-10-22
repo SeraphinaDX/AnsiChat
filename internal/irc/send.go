@@ -17,7 +17,7 @@ var sendSequence atomic.Uint64
 // still arrive through the normal event path. Never automatically retry an
 // uncertain send: the text may have arrived even if the PONG was lost.
 func confirmSend(c *girc.Client, send func(), timeout time.Duration) error {
-	token := fmt.Sprintf("copperline-send-%d", sendSequence.Add(1))
+	token := fmt.Sprintf("ansichat-send-%d", sendSequence.Add(1))
 	pong := make(chan struct{}, 1)
 	disconnected := make(chan struct{}, 1)
 	handler := c.Handlers.Add(girc.PONG, func(_ *girc.Client, e girc.Event) {

@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"copperline/internal/config"
-	"copperline/internal/dcc"
-	"copperline/internal/model"
-	"copperline/internal/urlgrab"
+	"ansichat/internal/config"
+	"ansichat/internal/dcc"
+	"ansichat/internal/model"
+	"ansichat/internal/urlgrab"
 
 	"github.com/lrstanley/girc"
 )
@@ -198,9 +198,9 @@ func (m *Manager) installHandlers(server string, c *girc.Client) {
 		m.handleEvent(server, client, e)
 	})
 
-	// Copperline handles VERSION/TIME from the single PRIVMSG event path in
+	// AnsiChat handles VERSION/TIME from the single PRIVMSG event path in
 	// handleEvent(). Replace girc's default responders with no-ops so there is
-	// exactly one place in Copperline that can send these replies.
+	// exactly one place in AnsiChat that can send these replies.
 	c.CTCP.Clear(girc.CTCP_VERSION)
 	c.CTCP.Set(girc.CTCP_VERSION, func(_ *girc.Client, _ girc.CTCPEvent) {})
 	c.CTCP.Clear(girc.CTCP_TIME)
@@ -426,7 +426,7 @@ func (m *Manager) SendMessage(server, target, text string) error {
 	return nil
 }
 
-// SendTyping advertises Copperline's current typing state using the IRCv3
+// SendTyping advertises AnsiChat's current typing state using the IRCv3
 // +typing client tag. The specification requires at least three seconds
 // between typing notifications for a given target, so throttling lives here
 // rather than in the TUI.
@@ -883,7 +883,7 @@ func (m *Manager) IsConnected(server string) bool {
 	return s.ready.Load() && s.client.IsConnected()
 }
 
-// WantsConnection reports whether the user has asked Copperline to keep this
+// WantsConnection reports whether the user has asked AnsiChat to keep this
 // server connected. It lets the UI distinguish an automatic reconnect from a
 // deliberate /disconnect without exposing Session internals.
 func (m *Manager) WantsConnection(server string) bool {

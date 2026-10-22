@@ -6,7 +6,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"copperline/internal/model"
+	"ansichat/internal/model"
 	"github.com/gdamore/tcell/v3"
 	"github.com/metaspartan/gotui/v5/widgets"
 )

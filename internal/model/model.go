@@ -37,7 +37,7 @@ type Message struct {
 	// SuppressUnread keeps routine membership notices visible without treating
 	// them as conversation activity in the sidebar unread counter.
 	SuppressUnread bool `json:",omitempty"`
-	// Replay marks messages restored from a Copperline relay's retained
+	// Replay marks messages restored from a AnsiChat relay's retained
 	// history. The TUI displays them normally but does not re-log or
 	// re-notify them on every client attachment.
 	Replay bool

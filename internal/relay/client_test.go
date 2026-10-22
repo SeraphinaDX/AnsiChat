@@ -2,8 +2,8 @@ package relay
 
 import (
 	"context"
-	"copperline/internal/config"
-	"copperline/internal/model"
+	"ansichat/internal/config"
+	"ansichat/internal/model"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/json"

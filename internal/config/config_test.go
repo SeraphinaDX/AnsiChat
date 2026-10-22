@@ -35,7 +35,7 @@ func TestKeyBindingMatchesAltAliases(t *testing.T) {
 func TestApplyDefaultsAddsKeybindings(t *testing.T) {
 	cfg := Config{}
 	cfg.applyDefaults()
-	if cfg.General.IgnoreFile != "~/.config/copperline/ignores.toml" {
+	if cfg.General.IgnoreFile != "~/.config/ansichat/ignores.toml" {
 		t.Fatalf("ignore file default = %q", cfg.General.IgnoreFile)
 	}
 	if cfg.Keybindings.UserListDown != "Alt+N" || cfg.Keybindings.UserListUp != "Alt+P" {
