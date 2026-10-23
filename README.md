@@ -190,6 +190,10 @@ removed; neither departure event increments unread activity. In relay mode,
 set these options on the IRC-owning relay server and restart it. The relay
 forwards generated notices to attached clients without a protocol change.
 
+## Fixed in 0.2.34
+
+Fixed a terminal-input decoder loop when a UTF-8 character is split across TTY reads. Even a short website paste containing curly quotes could stall before its paste-end marker reached the editor. UTF-8 input is now decoded as a continuous stream, so incomplete characters wait for the next read instead of spinning. This complements the large-input performance changes in 0.2.33. Update the terminal client; the relay does not need an update.
+
 ## Fixed in 0.2.33
 
 Terminal input bursts are inserted in small batches, including paste methods that do not send bracketed-paste markers. The input renders a bounded window around the cursor while retaining the complete editable draft. This avoids character-by-character copying and full-draft redraws for large website pastes. Cursor movement, configured shortcuts, and bracketed-paste line handling remain available.
@@ -263,7 +267,7 @@ include hostname, username, IP addresses, serial numbers, or account details.
 Example (values vary by device):
 
 ```text
-AnsiChat 0.2.33 | OS: CachyOS (Linux 6.18)/amd64 | CPU: Intel Core i5 — 8 logical CPUs | GPU: Intel UHD Graphics 620 | RAM: 4.2/15.5 GiB used | Up: 2d 3h 12m
+AnsiChat 0.2.34 | OS: CachyOS (Linux 6.18)/amd64 | CPU: Intel Core i5 — 8 logical CPUs | GPU: Intel UHD Graphics 620 | RAM: 4.2/15.5 GiB used | Up: 2d 3h 12m
 ```
 
 ## Fixed in 0.2.26
