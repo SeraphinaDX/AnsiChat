@@ -164,6 +164,23 @@ func (k KeybindingsConfig) namedBindings() []struct {
 	}
 }
 
+// PrintableShortcuts identifies literal keys that must stay separate when the
+// terminal UI batches a burst of ordinary text input.
+func (k KeybindingsConfig) PrintableShortcuts() map[string]bool {
+	keys := make(map[string]bool)
+	bindings := k.namedBindings()
+	bindings = append(bindings, struct{ name, value string }{"relay_reconnect", k.RelayReconnect})
+	for _, binding := range bindings {
+		key, err := CanonicalKeyBinding(binding.value)
+		if err == nil && len([]rune(key)) == 1 {
+			keys[key] = true
+		} else if key == "<Space>" {
+			keys[" "] = true
+		}
+	}
+	return keys
+}
+
 // CanonicalKeyBinding converts user-friendly config names and gotui event IDs
 // to the same representation. Examples: Alt+N => <M-n>, Ctrl+P => <C-p>.
 func CanonicalKeyBinding(value string) (string, error) {
