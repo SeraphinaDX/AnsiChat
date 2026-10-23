@@ -58,6 +58,8 @@ type App struct {
 	pasteLiteral       bool
 	pasteSend          *pasteSend
 	pasteResults       chan pasteSendResult
+	inputPosition      inputPosition
+	printableShortcuts map[string]bool
 
 	sidebar      *widgets.List
 	transcript   *transcriptList
@@ -131,6 +133,7 @@ func New(cfg *config.Config) *App {
 func NewWithBackend(cfg *config.Config, backend ircclient.Backend) *App {
 	a := &App{
 		cfg:                cfg,
+		printableShortcuts: cfg.Keybindings.PrintableShortcuts(),
 		state:              model.New(cfg.General.HistoryLines),
 		irc:                backend,
 		logger:             logging.New(cfg.General.LoggingEnabled(), cfg.General.LogDir, cfg.General.Timestamp),
@@ -303,7 +306,9 @@ func (a *App) Run() error {
 			if !ok {
 				return nil
 			}
-			a.handleUIEvent(e)
+			if !a.handleInputEvents(e, events) {
+				return nil
+			}
 			if !a.copyMode {
 				a.render()
 			}

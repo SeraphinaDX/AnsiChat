@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"ansichat/internal/config"
 	"ansichat/internal/model"
@@ -79,6 +80,13 @@ func (a *App) handleUIEvent(e ui.Event) {
 // modifier. gotui v5.0.3 preserves Alt on KeyRune IDs but not Ctrl, so inspect
 // the raw tcell event as a fallback instead of losing configurable Ctrl keys.
 func keyBindingMatchesEvent(binding string, e ui.Event) bool {
+	if key, ok := e.Payload.(*tcell.EventKey); ok && key != nil && key.Key() == tcell.KeyRune {
+		_, size := utf8.DecodeRuneInString(key.Str())
+		if size < len(key.Str()) {
+			// A batch of literal text cannot represent a single-key shortcut.
+			return false
+		}
+	}
 	if config.KeyBindingMatches(binding, e.ID) {
 		return true
 	}
@@ -99,11 +107,10 @@ func keyBindingMatchesRuneFallback(binding, text string, ctrl, alt bool) bool {
 }
 
 func canonicalRuneKeyEvent(text string, ctrl, alt bool) string {
-	runes := []rune(text)
-	if len(runes) != 1 {
+	r, size := utf8.DecodeRuneInString(text)
+	if size == 0 || size != len(text) {
 		return ""
 	}
-	r := runes[0]
 
 	// Some legacy reports put the ASCII control byte in Str() instead of the
 	// printable letter. Turn Ctrl+A..Ctrl+Z back into a..z for matching.
@@ -255,11 +262,11 @@ func (a *App) handleKey(e ui.Event) {
 
 	switch id {
 	case "<Enter>":
-		if a.pasteLiteral || strings.Contains(a.input.Text, "\n") {
+		line := strings.TrimSpace(a.input.Text)
+		if a.pasteLiteral || strings.Contains(a.input.Text, "\n") || (len(line) > 240 && !strings.HasPrefix(line, "/")) {
 			a.startPasteSend()
 			return
 		}
-		line := strings.TrimSpace(a.input.Text)
 		if line == "" {
 			return
 		}
@@ -331,11 +338,9 @@ func (a *App) handleKey(e ui.Event) {
 		// If follow_bottom is rebound, End retains its normal input-editing role.
 		a.input.Cursor = len([]rune(a.input.Text))
 	case "<Space>":
-		a.input.InsertRune(' ')
+		a.insertInputText(" ")
 	default:
-		for _, r := range printableInputText(e) {
-			a.input.InsertRune(r)
-		}
+		a.insertInputText(printableInputText(e))
 	}
 }
 

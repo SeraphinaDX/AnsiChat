@@ -160,3 +160,43 @@ func TestPasteCancellationDoesNotSendRemainingLines(t *testing.T) {
 	default:
 	}
 }
+
+func TestLongUnbracketedChatUsesBackgroundSender(t *testing.T) {
+	a := newCatchupApp(t)
+	a.selectBuffer(a.irc.ServerNames()[0], "#chat")
+	backend := &pasteBackend{calls: make(chan string, 4), release: make(chan struct{})}
+	a.irc = backend
+	a.input.Text = strings.Repeat("website text ", 30)
+	a.input.Cursor = len(a.input.Text)
+	done := make(chan struct{})
+	go func() {
+		a.handleKey(ui.Event{Type: ui.KeyboardEvent, ID: "<Enter>"})
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		close(backend.release)
+		<-done
+		t.Fatal("long chat blocked the UI waiting for delivery")
+	}
+	if a.pasteSend == nil {
+		close(backend.release)
+		t.Fatal("long chat did not start a background send")
+	}
+	a.handleKey(ui.Event{Type: ui.KeyboardEvent, ID: "x"})
+	if a.input.Text != "x" {
+		close(backend.release)
+		t.Fatal("could not type while long chat was sending")
+	}
+	close(backend.release)
+	deadline := time.After(time.Second)
+	for a.pasteSend != nil {
+		select {
+		case result := <-a.pasteResults:
+			a.finishPasteSend(result)
+		case <-deadline:
+			t.Fatal("background send did not complete")
+		}
+	}
+}

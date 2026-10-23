@@ -8,7 +8,6 @@ import (
 
 	"ansichat/internal/model"
 	"github.com/gdamore/tcell/v3"
-	"github.com/metaspartan/gotui/v5/widgets"
 )
 
 // gotui 5.0.3 discards EventPaste. Adapt its input queue while retaining its
@@ -103,11 +102,8 @@ func pasteEvents(ctx context.Context, source chan tcell.Event) chan tcell.Event 
 
 func (a *App) insertPaste(text string) {
 	text = strings.ReplaceAll(strings.ReplaceAll(text, "\r\n", "\n"), "\r", "\n")
-	// Insert at the cursor once, instead of repeatedly reallocating the draft.
-	before := []rune(a.input.Text)
-	cursor := min(max(a.input.Cursor, 0), len(before))
-	a.input.Text = string(before[:cursor]) + text + string(before[cursor:])
-	a.input.Cursor = cursor + utf8.RuneCountInString(text)
+	a.syncInputDraft()
+	a.insertInputText(text)
 	a.pasteLiteral = a.pasteLiteral || strings.Contains(text, "\n") || len(a.input.Text) > 240
 	a.typingLastEdit = time.Now()
 	a.resetNickCompletion()
@@ -240,17 +236,4 @@ func (a *App) finishPasteSend(r pasteSendResult) {
 	}
 	a.local(batch.server, batch.target, model.KindSystem, "Paste sent.")
 	a.pasteSend = nil
-}
-
-func (a *App) inputForDisplay() *widgets.Input {
-	if !strings.Contains(a.input.Text, "\n") {
-		return a.input
-	}
-	preview := widgets.NewInput()
-	a.theme.applyInput(preview)
-	preview.SetRect(a.input.Min.X, a.input.Min.Y, a.input.Max.X, a.input.Max.Y)
-	preview.Title = a.input.Title
-	preview.Text = strings.ReplaceAll(a.input.Text, "\n", "↵")
-	preview.Cursor = a.input.Cursor
-	return preview
 }
