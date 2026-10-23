@@ -259,6 +259,7 @@ func (a *App) newTranscriptList() *transcriptList {
 }
 
 func (a *App) Run() error {
+	configureTerminalUTF8()
 	if err := ui.Init(); err != nil {
 		return err
 	}

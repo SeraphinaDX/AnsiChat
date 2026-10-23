@@ -2,8 +2,8 @@
 Icon = "Icon.png"
 Name = "AnsiChat"
 ID = "ca.cerberusgames.copperline"
-Version = "0.2.33"
-Build = 33
+Version = "0.2.34"
+Build = 34
 
 [AdaptiveIcon]
 Foreground = "Icon-foreground.png"
