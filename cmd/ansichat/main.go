@@ -36,6 +36,7 @@ func main() {
 
 	switch cfg.Relay.ModeValue() {
 	case "server":
+		log.Printf("AnsiChat relay configuration: %s", *configPath)
 		r, err := relay.NewServer(cfg)
 		if err != nil {
 			log.Fatal(err)
