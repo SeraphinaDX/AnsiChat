@@ -447,8 +447,6 @@ AnsiChat uses only `ansichat/config.toml` by default. It does not silently
 reuse `copperline/config.toml` or Copperline paths for logs, ignore rules,
 scripts, and relay keys. Copy an existing configuration and SSH keys to the
 AnsiChat directory before upgrading a relay; explicit paths still work.
-when those exist and the corresponding AnsiChat paths do not. Files are not
-moved or overwritten by this fallback.
 
 The GUI/Android app ID remains `ca.cerberusgames.copperline` to retain private
 settings and keys and allow Android updates with the same signing certificate.
