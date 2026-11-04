@@ -16,10 +16,16 @@ If `XDG_CONFIG_HOME` is set, AnsiChat instead uses:
 $XDG_CONFIG_HOME/ansichat/config.toml
 ```
 
-If that file is absent, the corresponding `copperline/config.toml` is used
-instead. Default logs, scripts, ignore rules, and relay keys similarly reuse
-existing Copperline paths when their AnsiChat replacements are absent. Explicit
-TOML paths and environment-variable names are used exactly as configured.
+AnsiChat does **not** automatically load `copperline/config.toml` when the
+AnsiChat file is missing. This prevents a relay server from silently starting
+with another profile. Default relay SSH keys, authorized keys, scripts, ignore
+rules and logs also use AnsiChat paths exclusively. Explicit TOML paths are
+always honored, including intentional legacy paths.
+
+After upgrading from Copperline, copy the old configuration into the AnsiChat
+directory and edit any explicitly configured `copperline/` paths. Copy existing
+relay private keys and authorized keys rather than regenerating them, or attached
+clients will need their pinned server fingerprint and authorization updated.
 
 A different configuration file can be selected at startup:
 
