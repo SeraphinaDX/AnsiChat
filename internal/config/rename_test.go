@@ -6,79 +6,93 @@ import (
 	"testing"
 )
 
-func TestRenamedDefaultConfigPath(t *testing.T) {
+func TestDefaultConfigNeverFallsBackToCopperline(t *testing.T) {
 	for _, xdg := range []bool{false, true} {
 		t.Run(map[bool]string{false: "home", true: "xdg"}[xdg], func(t *testing.T) {
 			home := t.TempDir()
 			t.Setenv("HOME", home)
 			t.Setenv("USERPROFILE", home)
 			t.Setenv("XDG_CONFIG_HOME", "")
-			base := filepath.Join(home, ".config")
 			if xdg {
-				base = t.TempDir()
-				t.Setenv("XDG_CONFIG_HOME", base)
+				t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 			}
-			current := filepath.Join(base, "ansichat", "config.toml")
-			legacy := filepath.Join(base, "copperline", "config.toml")
+			root, err := os.UserConfigDir()
+			if err != nil {
+				t.Fatal(err)
+			}
+			current := filepath.Join(root, "ansichat", "config.toml")
+			legacy := filepath.Join(root, "copperline", "config.toml")
 			if got := DefaultPath(); got != current {
 				t.Fatalf("fresh path = %q, want %q", got, current)
 			}
-			writeRenameFixture(t, legacy, "[relay]\nmode = 'client'\naddress = 'relay.example:2222'\nhost_key_fingerprint = 'SHA256:test'\n")
-			if got := DefaultPath(); got != legacy {
-				t.Fatalf("upgrade path = %q, want %q", got, legacy)
-			}
-			if _, err := Load(""); err != nil {
-				t.Fatalf("load legacy configuration: %v", err)
-			}
-			// An invalid new config must report its error, never use the old one.
-			writeRenameFixture(t, current, "invalid = [")
+
+			// An old config may describe a completely different relay. Do not
+			// use it unless the operator explicitly passes its path.
+			valid := "[relay]\nmode = 'client'\naddress = 'relay.example:2222'\nhost_key_fingerprint = 'SHA256:test'\n"
+			writeRenameFixture(t, legacy, valid)
 			if got := DefaultPath(); got != current {
-				t.Fatalf("new config did not take precedence: %q", got)
+				t.Fatalf("legacy config changed default: %q", got)
 			}
+			if _, err := Load(""); !os.IsNotExist(err) {
+				t.Fatalf("missing AnsiChat config should fail, got %v", err)
+			}
+			if _, err := Load(legacy); err != nil {
+				t.Fatalf("explicit legacy config must still work: %v", err)
+			}
+			writeRenameFixture(t, current, valid)
+			if _, err := Load(""); err != nil {
+				t.Fatalf("load AnsiChat config: %v", err)
+			}
+			writeRenameFixture(t, current, "invalid = [")
 			if _, err := Load(""); err == nil {
-				t.Fatal("invalid AnsiChat config silently fell back to Copperline")
+				t.Fatal("invalid AnsiChat config unexpectedly succeeded")
 			}
 		})
 	}
 }
 
-func TestRenameReusesExistingDefaultDataAndKeys(t *testing.T) {
+func TestDefaultRelayFilesNeverFallBackToCopperline(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
-	paths := []string{
-		".config/copperline/relay_host_ed25519",
-		".config/copperline/relay_client_ed25519",
-		".config/copperline/relay_authorized_keys",
-		".config/copperline/ignores.toml",
-		".config/copperline/scripts/hello.lua",
-		".local/state/copperline/logs/channel.log",
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	root, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, path := range paths {
-		writeRenameFixture(t, filepath.Join(home, filepath.FromSlash(path)), "existing data")
+	legacyDir := filepath.Join(root, "copperline")
+	newDir := filepath.Join(root, "ansichat")
+	for _, filename := range []string{
+		"relay_host_ed25519",
+		"relay_client_ed25519",
+		"relay_authorized_keys",
+		"ignores.toml",
+		"scripts/hello.lua",
+	} {
+		writeRenameFixture(t, filepath.Join(legacyDir, filename), "existing legacy data")
 	}
+	writeRenameFixture(t, filepath.Join(home, ".local", "state", "copperline", "logs", "channel.log"), "legacy logs")
+
 	cfg := Config{}
 	cfg.applyDefaults()
-	for name, path := range map[string]string{
-		"host key": cfg.Relay.HostKey, "client key": cfg.Relay.PrivateKey,
-		"authorized keys": cfg.Relay.AuthorizedKeys, "ignore file": cfg.General.IgnoreFile,
-		"scripts": cfg.Scripting.Dir, "logs": cfg.General.LogDir,
+	for name, tc := range map[string]struct{ got, want string }{
+		"host key":       {cfg.Relay.HostKey, filepath.Join(newDir, "relay_host_ed25519")},
+		"client key":     {cfg.Relay.PrivateKey, filepath.Join(newDir, "relay_client_ed25519")},
+		"authorized keys": {cfg.Relay.AuthorizedKeys, filepath.Join(newDir, "relay_authorized_keys")},
+		"ignore file":    {cfg.General.IgnoreFile, filepath.Join(newDir, "ignores.toml")},
+		"scripts":        {cfg.Scripting.Dir, filepath.Join(newDir, "scripts")},
+		"logs":           {cfg.General.LogDir, "~/.local/state/ansichat/logs"},
 	} {
-		if _, err := os.Stat(ExpandPath(path)); err != nil {
-			t.Errorf("%s no longer points to existing data: %q (%v)", name, path, err)
+		if tc.got != tc.want {
+			t.Errorf("%s = %q, want %q", name, tc.got, tc.want)
 		}
 	}
-	// New keys take precedence; the legacy bytes are never moved or overwritten.
-	newKey := filepath.Join(home, ".config", "ansichat", "relay_client_ed25519")
-	writeRenameFixture(t, newKey, "new key")
-	cfg = Config{}
+	// User-specified paths, including intentional legacy paths, are respected.
+	cfg = Config{Relay: RelayConfig{HostKey: filepath.Join(legacyDir, "relay_host_ed25519"), AuthorizedKeys: filepath.Join(legacyDir, "relay_authorized_keys")}}
 	cfg.applyDefaults()
-	if got := ExpandPath(cfg.Relay.PrivateKey); got != newKey {
-		t.Fatalf("new private key = %q, want %q", got, newKey)
-	}
-	oldKey := filepath.Join(home, ".config", "copperline", "relay_client_ed25519")
-	if data, err := os.ReadFile(oldKey); err != nil || string(data) != "existing data" {
-		t.Fatalf("legacy key modified: %q, %v", data, err)
+	if cfg.Relay.HostKey != filepath.Join(legacyDir, "relay_host_ed25519") ||
+		cfg.Relay.AuthorizedKeys != filepath.Join(legacyDir, "relay_authorized_keys") {
+		t.Fatal("explicit relay paths were overridden")
 	}
 }
 

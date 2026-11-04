@@ -3,8 +3,11 @@
 Formerly Copperline. Update service/startup commands to run `ansichat`. The
 rename retains relay protocol 2, its existing private SSH channel identifier,
 and the default SSH username `copperline` for compatibility with existing peers.
-Existing configuration files and keys are found automatically when their new
-AnsiChat paths are absent; explicitly configured paths keep working.
+The default config and key directories are now exclusively AnsiChat paths;
+old Copperline paths are only used if explicitly configured. Before restarting
+an upgraded relay, copy its old configuration, host key and authorized keys into
+`~/.config/ansichat/`, keeping the key contents intact so existing clients
+still trust the relay.
 
 AnsiChat can keep IRC connections alive on one machine and let other AnsiChat clients attach to that session over SSH. The SSH transport is implemented **inside AnsiChat** with Go's `golang.org/x/crypto/ssh` package. AnsiChat does not invoke the system `ssh` client or `sshd`.
 

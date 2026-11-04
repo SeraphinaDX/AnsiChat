@@ -443,12 +443,10 @@ renamed entry points with `make tui` and `make gui`, or use the commands below.
 For an installed desktop launcher, run `make install-gui` to update its name and
 executable. Update any relay service or startup command to run `ansichat`.
 
-If the new default `ansichat/config.toml` does not exist, AnsiChat loads the
-existing `copperline/config.toml` from the same configuration root. Existing
-explicit paths and environment-variable names in TOML keep working. Default
-logs, ignore rules, scripts, and relay keys also reuse their Copperline paths
-when those exist and the corresponding AnsiChat paths do not. Files are not
-moved or overwritten by this fallback.
+AnsiChat uses only `ansichat/config.toml` by default. It does not silently
+reuse `copperline/config.toml` or Copperline paths for logs, ignore rules,
+scripts, and relay keys. Copy an existing configuration and SSH keys to the
+AnsiChat directory before upgrading a relay; explicit paths still work.
 
 The GUI/Android app ID remains `ca.cerberusgames.copperline` to retain private
 settings and keys and allow Android updates with the same signing certificate.
