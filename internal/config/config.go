@@ -471,31 +471,18 @@ type SASL struct {
 	Identity    string `toml:"identity"`
 }
 
+// DefaultPath always resolves the AnsiChat configuration. Never silently
+// start a relay with an old Copperline configuration from another directory.
 func DefaultPath() string {
-	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
-		return preferExistingPath(filepath.Join(xdg, "ansichat", "config.toml"), filepath.Join(xdg, "copperline", "config.toml"))
-	}
-	home, err := os.UserHomeDir()
+	return filepath.Join(defaultConfigDir(), "config.toml")
+}
+
+func defaultConfigDir() string {
+	root, err := os.UserConfigDir()
 	if err != nil {
-		return "config.toml"
+		return "ansichat"
 	}
-	return preferExistingPath(filepath.Join(home, ".config", "ansichat", "config.toml"), filepath.Join(home, ".config", "copperline", "config.toml"))
-}
-
-// Keep existing data and keys usable after the rename. Only fall back when the
-// new path is absent; permission errors must not silently select another key.
-func preferExistingPath(current, legacy string) string {
-	if _, err := os.Stat(ExpandPath(current)); !os.IsNotExist(err) {
-		return current
-	}
-	if _, err := os.Stat(ExpandPath(legacy)); !os.IsNotExist(err) {
-		return legacy
-	}
-	return current
-}
-
-func defaultDataPath(path string) string {
-	return preferExistingPath(path, strings.Replace(path, "/ansichat/", "/copperline/", 1))
+	return filepath.Join(root, "ansichat")
 }
 
 func Load(path string) (*Config, error) {
@@ -547,10 +534,10 @@ func (c *Config) applyDefaults() {
 		c.General.ReconnectSecs = 10
 	}
 	if c.General.LogDir == "" {
-		c.General.LogDir = defaultDataPath("~/.local/state/ansichat/logs")
+		c.General.LogDir = "~/.local/state/ansichat/logs"
 	}
 	if c.General.IgnoreFile == "" {
-		c.General.IgnoreFile = defaultDataPath("~/.config/ansichat/ignores.toml")
+		c.General.IgnoreFile = filepath.Join(defaultConfigDir(), "ignores.toml")
 	}
 	c.Keybindings.applyDefaults()
 	c.Theme.applyDefaults()
@@ -564,7 +551,7 @@ func (c *Config) applyDefaults() {
 		c.Gotify.TimeoutSeconds = 5
 	}
 	if c.Scripting.Dir == "" {
-		c.Scripting.Dir = defaultDataPath("~/.config/ansichat/scripts")
+		c.Scripting.Dir = filepath.Join(defaultConfigDir(), "scripts")
 	}
 	if c.Relay.Mode == "" {
 		c.Relay.Mode = "direct"
@@ -573,17 +560,17 @@ func (c *Config) applyDefaults() {
 		c.Relay.Listen = "127.0.0.1:2222"
 	}
 	if c.Relay.HostKey == "" {
-		c.Relay.HostKey = defaultDataPath("~/.config/ansichat/relay_host_ed25519")
+		c.Relay.HostKey = filepath.Join(defaultConfigDir(), "relay_host_ed25519")
 	}
 	if c.Relay.AuthorizedKeys == "" {
-		c.Relay.AuthorizedKeys = defaultDataPath("~/.config/ansichat/relay_authorized_keys")
+		c.Relay.AuthorizedKeys = filepath.Join(defaultConfigDir(), "relay_authorized_keys")
 	}
 	if c.Relay.User == "" {
 		// This is the relay's authentication username, not a displayed app name.
 		c.Relay.User = "copperline"
 	}
 	if c.Relay.PrivateKey == "" {
-		c.Relay.PrivateKey = defaultDataPath("~/.config/ansichat/relay_client_ed25519")
+		c.Relay.PrivateKey = filepath.Join(defaultConfigDir(), "relay_client_ed25519")
 	}
 	for i := range c.Servers {
 		s := &c.Servers[i]
