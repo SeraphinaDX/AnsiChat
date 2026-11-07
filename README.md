@@ -1,884 +1,153 @@
 # AnsiChat
 
-Formerly **Copperline**. The terminal command is now `ansichat`; the graphical
-client is `ansichat-gui`. See [Upgrading from Copperline](#upgrading-from-copperline)
-for configuration and relay compatibility.
+AnsiChat is a multi-network IRC client written in Go, with a terminal interface,
+a desktop and Android GUI, and a built-in SSH relay/bouncer. Connect directly to
+IRC, or keep your sessions running on a relay and attach from multiple devices.
 
-**Desktop and Android GUI:** the new Fyne relay frontend lives in `cmd/ansichat-gui`. See [GUI.md](GUI.md) for setup, desktop builds, and Android APK packaging. The terminal frontend remains available.
+Formerly **Copperline**. See the [upgrade guide](SETUP.md#upgrading-from-copperline)
+if you have an existing installation.
 
-**AnsiChat is a modern terminal IRC client and native SSH relay/bouncer written in Go.** It is built for people who still love IRC, but do not want to give up a fast native application, modern IRCv3 features, rich terminal UI, scripting, notifications, persistent sessions, or strong customization.
+[Quick start](#quick-start) · [Configuration](CONFIGURATION.md) ·
+[Commands and controls](USAGE.md) · [SSH relay](RELAY.md) ·
+[Desktop and Android](GUI.md) · [Release notes](CHANGELOG.md)
 
-AnsiChat is not a toy IRC example and it is not just a thin wrapper around an IRC library. It is an everyday multi-network client with its own buffer model, responsive TUI, persistent logging, DCC, Gotify notifications, Lua scripting, configurable keyboard and mouse controls, true-color themes, IRCv3 support, and an **embedded SSH relay system that can keep your IRC sessions alive when your local client is gone**.
+![AnsiChat terminal interface](screenshots/screenshot2.avif)
 
-One AnsiChat installation can connect directly to IRC, run headlessly as a persistent relay, or act as a local TUI attached to a remote AnsiChat relay. The relay transport is built directly into AnsiChat using Go's SSH libraries: **no system `ssh`, no `sshd`, no web service, no TLS certificate, and no certificate authority are required.**
+## Quick start
 
-![AnsiChat themes in terminal](screenshots/screenshot2.avif)
+### 1. Build the terminal client
 
-<p align="center">
-  <img src="screenshots/screenshot6.avif" alt="Android">
-</p>
-
-<p align="center">
-  <img src="screenshots/screenshot3.avif" alt="gotify">
-</p>
-
-## LLM Code Policy
-
-This project does not discriminate against the use of LLM generated code. The project already does contain LLM generated code. Just make sure the code compiles and does not introduce new bugs or cause it not to pass tests.
-
-This project also chose the language Go precisely for its memory safety because of those guardrails for LLM generated code.
-
-This code is daily driven by the author. All bugs are eliminated in a prompt manner by someone terminally online.
-
-## Why AnsiChat is different
-
-AnsiChat deliberately combines the things people expect from a traditional IRC client with features that are usually split across a client, a bouncer, shell tools, and notification services.
-
-- **A real native terminal IRC client** — built in Go, compiled to a native executable, and designed around concurrent network work without making the UI wait on it.
-- **A built-in SSH relay/bouncer** — run AnsiChat on a server, keep IRC connected there, and attach AnsiChat clients from other machines.
-- **No external SSH daemon required** — relay mode has its own embedded SSH server and private AnsiChat channel protocol.
-- **No certificate-authority hassle** — relay clients authenticate with SSH public keys and pin the relay's SSH host-key fingerprint.
-- **Safer relay message delivery** — chat text is not cleared from the input field until the relay acknowledges the request. If the transport dies or a send cannot be confirmed, the text stays in the input instead of silently disappearing.
-- **Relay health monitoring** — the client heartbeats the SSH transport and exposes an always-visible reconnect control with a configurable shortcut.
-- **Multiple attached clients** — more than one AnsiChat client can attach to the same relay while the relay maintains the IRC connections.
-- **Modern IRCv3 without abandoning classic IRC** — server-time, message tags, echo-message, typing indicators, CHATHISTORY, account/away state, SASL, CTCP, DCC, `/raw`, and the familiar slash-command workflow all live together.
-- **A TUI meant to be lived in** — channel topics, nick lists, mouse support, buffer numbers, direct jumps, nickname completion, per-buffer input history, copy mode, startup progress, and configurable keybindings.
-- **Lua scripting built in** — add commands, react to IRC events, automate repetitive work, and extend AnsiChat without recompiling it.
-- **Notifications without freezing IRC** — Gotify requests run asynchronously and can alert on mentions and private messages.
-- **Everything is themeable** — true-color palettes cover buffers, nicks, mentions, message types, borders, input, cursor, status areas, and more.
-
-AnsiChat is designed so the IRC connection, UI, logging, scripting, notifications, relay transport, and DCC code remain separate pieces rather than collapsing into one giant `main.go`.
-
-## Feature highlights
-
-### Native AnsiChat SSH relay
-
-AnsiChat can be its own IRC bouncer.
-
-Run one AnsiChat instance in relay-server mode on an always-on machine. It maintains the real IRC connections, retains bounded in-memory conversation history, tracks channel state, and accepts AnsiChat clients over its **embedded SSH server**.
-
-A relay client runs the normal AnsiChat TUI locally while the remote relay stays connected to IRC. Closing the local client does not make the relay leave your networks and channels.
-
-Relay mode includes:
-
-- public-key-only authentication;
-- automatically generated Ed25519 host and client keys;
-- SHA-256 host-key fingerprint pinning;
-- a AnsiChat-specific `authorized_keys` file;
-- multiple attached AnsiChat clients;
-- retained message replay when a client attaches again;
-- synchronized server, channel, topic, nick-list, capability, typing, and connection state;
-- suppression of huge WHO/NAMES housekeeping floods such as `352`, `353`, and `354` from the relay transport;
-- an SSH heartbeat so stale connections stop pretending to be healthy;
-- a dedicated clickable **RECONNECT** control in relay-client mode;
-- **Alt+R** as the default configurable force-reconnect shortcut;
-- safe force reconnect that replaces only the local SSH attachment and leaves IRC connected on the relay;
-- relay send acknowledgement before AnsiChat clears normal chat text from the input field.
-
-The embedded SSH endpoint is intentionally narrow. It does **not** provide a shell, PTY, SFTP, remote command execution, or SSH port forwarding. It accepts AnsiChat's private relay channel only.
-
-See [`RELAY.md`](RELAY.md) for complete setup instructions.
-
-### Modern IRCv3
-
-AnsiChat requests a broad modern capability set while still behaving like a recognizable IRC client. Depending on what the IRC network supports, AnsiChat can use:
-
-- CAP negotiation;
-- message tags;
-- server-time;
-- echo-message;
-- account-notify and account-tag;
-- away-notify;
-- chghost;
-- extended-join;
-- multi-prefix;
-- userhost-in-names;
-- labeled-response;
-- standard replies;
-- CHATHISTORY;
-- event playback;
-- read markers;
-- IRCv3 `+typing` client tags;
-- SASL PLAIN and EXTERNAL.
-
-The negotiated capability set is visible with `/caps`, and `/raw` remains available for network-specific features and experiments.
-
-### A responsive, practical TUI
-
-AnsiChat's interface is designed for long-running everyday use rather than a minimal demo.
-
-- multiple IRC networks at once;
-- channels and private-query buffers;
-- numbered buffers;
-- direct buffer jumping with `F6`;
-- next/previous buffer shortcuts;
-- channel topics with wrapping;
-- scrollable nick list;
-- mouse wheel support for transcripts and nick lists;
-- double-click a nick to open a private query;
-- channel-aware nickname completion with Tab cycling;
-- `Up` / `Down` per-buffer message and command history;
-- configurable input-history limit, defaulting to 10 entries per buffer;
-- page and single-line transcript scrolling;
-- WeeChat-style bare/copy mode for easy terminal text selection;
-- visible startup progress while servers connect and channels join;
-- drafts kept in the input when AnsiChat is not ready to send them;
-- configurable keybindings with collision and validation checks;
-- compatibility handling for modern terminal Ctrl/Alt key event forms.
-
-### Lua scripting
-
-AnsiChat embeds Lua for client-side extension and automation. Scripts can:
-
-- register custom slash commands;
-- receive IRC event hooks;
-- send messages and notices;
-- write local buffer text;
-- send raw IRC commands;
-- inspect the active server, target, and nickname;
-- reload without restarting AnsiChat.
-
-Use `/lua reload` to reload scripts. AnsiChat performs a physical terminal resync after script reloads to keep the TUI clean.
-
-See [`SCRIPTING.md`](SCRIPTING.md) for the complete scripting API and [`scripts/`](scripts/) for examples.
-
-### DCC, Gotify, logging, and themes
-
-AnsiChat also includes features that are often missing from smaller terminal IRC clients:
-
-- active DCC SEND;
-- incoming DCC CHAT;
-- asynchronous Gotify notifications for mentions and private messages;
-- per-network/per-buffer persistent logs;
-- configurable date/time stamps;
-- muted pre-session conversation backlog without confusing current-session messages with old log text;
-- configurable mention highlighting;
-- deterministic per-nick colors;
-- full true-color theme customization.
-
-## Features
-
-- **Native Go application** with garbage collection, goroutines, and a multithreaded runtime
-- **Multiple IRC networks at once**, each with multiple channels and private-message/query buffers
-- **Native AnsiChat SSH relay/bouncer mode** with embedded SSH and public-key authentication
-- **Relay message safety** with send acknowledgement, heartbeat health detection, and force reconnect
-- **Modern IRCv3 support** with CAP negotiation, message tags, server-time, echo-message, typing indicators, CHATHISTORY, account/away/chghost state, and more
-- **TLS and SASL** with PLAIN and EXTERNAL authentication
-- **Real DCC support** for sending and receiving files, plus incoming DCC CHAT
-- **Gotify notifications** for mentions and private messages without blocking IRC
-- **Persistent local logs** organized per network and buffer
-- **True-color theming** for nicks, message types, buffer state, borders, input, status areas, mentions, and more
-- **Traditional IRC usability** with nick lists, channel topics, CTCP, `/whois`, persistent `/ignore` rules, `/me`, `/notice`, `/raw`, and familiar slash commands
-- **Fast buffer navigation** with numbered buffers, `F6` direct jumping, and configurable next/previous shortcuts
-- **Nickname completion** with channel-aware Tab completion and match cycling
-- **Mouse support** for scrollback, buffer selection, nick-list scrolling, private-query opening, and relay reconnect
-- **Automatic IRC reconnect** and independent per-server connection handling
-- **Clear startup feedback** with connecting/joining states and progress information
-- **Independently configurable JOIN/PART/QUIT notices**, typing privacy, logging, mouse behavior, notifications, history limits, and other day-to-day preferences
-- **TOML configuration** with environment-variable support for passwords and tokens
-- **Embedded Lua scripting** for custom slash commands, IRC event hooks, automation, and raw protocol extensions
-- **Raw IRC access** for network-specific commands and newer extensions without dedicated UI yet
-
-## Configurable channel departure notices
-
-`[general].show_part_messages` and `[general].show_quit_messages` independently
-control PART and QUIT transcript notices. Both default to `true`. QUIT notices
-appear in the server buffer and in each shared channel before membership is
-removed; neither departure event increments unread activity. In relay mode,
-set these options on the IRC-owning relay server and restart it. The relay
-forwards generated notices to attached clients without a protocol change.
-
-## Added in 0.2.37
-
-Connect to an unconfigured IRC server with `/quick irc.example.org`. TLS with
-certificate verification is the default (port 6697). Use
-`/quick irc.example.org 6697 MyNick` or `/quick irc.example.org:6697 MyNick`
-for a custom port/nickname, or `/quick -plain irc.example.org 6667` for plaintext.
-Without a nickname override, the connection uses the IRC-owning process's
-`[general]` identity. Network passwords, SASL, client certificates, and autojoin
-channels are not inherited.
-
-The command selects the new server's status buffer; use `/join #channel` next.
-Sessions remain available for `/connect` and `/disconnect` until the process
-exits, without writing to TOML. Repeating the same endpoint and nickname reuses
-the session. In relay mode the connection is made on the relay and shared by
-attached clients; update both client and relay to 0.2.37 to use `/quick`.
-The wire protocol remains version 2; older relays reject the new command.
-
-## Fixed in 0.2.36
-
-Mentions now highlight channels you are not currently viewing in the terminal
-and graphical interfaces. The highlight clears when you open the channel or
-mark the mention read.
-
-## Fixed in 0.2.35
-
-Reduce relay-client memory overhead by releasing the large startup history decoder buffer, avoiding full server-state copies for routine lookups, and caching visible transcript cells. Relay checkpoints now stream message JSON to reduce temporary allocations. Add opt-in `-memprofile` diagnostics. History limits remain configurable per buffer and independently on each client and relay.
-
-## Fixed in 0.2.34
-
-Fixed a terminal-input decoder loop when a UTF-8 character is split across TTY reads. Even a short website paste containing curly quotes could stall before its paste-end marker reached the editor. UTF-8 input is now decoded as a continuous stream, so incomplete characters wait for the next read instead of spinning. This complements the large-input performance changes in 0.2.33. Update the terminal client; the relay does not need an update.
-
-## Fixed in 0.2.33
-
-Terminal input bursts are inserted in small batches, including paste methods that do not send bracketed-paste markers. The input renders a bounded window around the cursor while retaining the complete editable draft. This avoids character-by-character copying and full-draft redraws for large website pastes. Cursor movement, configured shortcuts, and bracketed-paste line handling remain available.
-
-Long ordinary chat drafts also use the existing background paste sender when Enter is pressed, so waiting for IRC delivery does not block typing. Slash commands keep their normal behavior. This is a terminal-client update; the relay protocol remains unchanged.
-
-## Fixed in 0.2.31
-
-`/flex` keeps longer GPU model names within its existing GPU field budget instead
-of cutting each model at 64 bytes. Linux uses compact AMD, NVIDIA, and Intel vendor
-labels, preserving the full reported device description and Radeon model suffix.
-The complete message remains bounded to one IRC line.
-
-## New in 0.2.30
-
-`/flex` now includes GPU information when available and leaves off load averages.
-Linux uses local `lspci` model names, with PCI vendor/device IDs as a fallback if
-pciutils is unavailable. Windows uses native display-adapter APIs; macOS uses
-the local System Profiler. Android reads GPU model files exposed by Adreno/Mali
-drivers when permitted. Distinct GPU names are included on systems with multiple
-adapters. Missing or restricted GPU information is omitted. Hardware queries
-have bounded execution time and output, and summaries remain a single IRC line.
-
-## Fixed in 0.2.29
-
-IRC reconnects now rejoin channels successfully joined during the current session,
-including channels outside the configured autojoin list. Keys supplied through
-`/join #channel key` are kept in memory for reconnects. Explicit `/part`, `/leave`,
-and `/close` requests, and kicks of your own nickname, remove the channel from the
-session's reconnect list. Failed joins and merely open buffers are not treated
-as joined channels.
-
-The shared IRC backend handles this in direct mode and on the relay server, so
-TUI, desktop GUI, and Android GUI clients benefit. In relay mode, update the relay
-server too. This session state does not change the TOML autojoin list or persist
-across a process restart.
-
-## New in 0.2.28
-
-Channel lists sort alphabetically by default in the TUI, desktop GUI, and Android
-GUI. Sorting ignores letter case, keeps each network's status buffer first, and
-also orders private queries. TUI numbered jumps and next/previous/unread navigation
-follow the displayed order. Network order, selected conversations, and drafts are
-preserved.
-
-To retain creation order, configure this locally on each client:
-
-```toml
-[general]
-sort_channels_alphabetically = false
-```
-
-Omitting the setting or using `true` enables alphabetical sorting.
-
-## New in 0.2.27
-
-`/flex` posts a compact system summary to the current channel or query in every
-frontend: TUI, desktop GUI, and Android GUI. Command names are case-insensitive,
-so `/Flex` works too. The summary includes AnsiChat version, OS/release and
-architecture, CPU model and logical CPU count, GPU, RAM, and system uptime when
-available. Android also includes the device model when available.
-Windows uses native system/registry APIs; macOS reports total RAM. Other platforms
-retain the portable OS, architecture, and CPU-count baseline. Missing/restricted
-stats are omitted.
-
-The statistics describe the device running AnsiChat, including in relay mode.
-The command takes no arguments and uses the normal message delivery path, so a
-failed send keeps `/flex` in the TUI input or restores the GUI draft. It does not
-include hostname, username, IP addresses, serial numbers, or account details.
-
-Example (values vary by device):
-
-```text
-AnsiChat 0.2.34 | OS: CachyOS (Linux 6.18)/amd64 | CPU: Intel Core i5 — 8 logical CPUs | GPU: Intel UHD Graphics 620 | RAM: 4.2/15.5 GiB used | Up: 2d 3h 12m
-```
-
-## Fixed in 0.2.26
-
-Android sending keeps the composer focused and the keyboard open, whether using
-the on-screen Enter key or the Send control inside the message box. Opening the
-composer scrolls to the latest messages and keeps them above the keyboard as the
-viewport changes. Navigation controls hide while typing to give chat more room.
-
-## New in 0.2.25
-
-`/map` requests the IRC network topology from the active server in every AnsiChat frontend: the terminal UI, desktop GUI, and Android GUI. MAP replies are shown in the network's server/status buffer. The command accepts no arguments and uses the relay's existing raw IRC path, so no relay protocol bump is required.
-
-## Fixed in 0.2.18
-
-PART visibility is now configurable independently from JOIN visibility. Use
-`show_part_messages = false` under `[general]` to hide `nick left` lines
-without affecting membership tracking, typing cleanup, or unread activity.
-The older `show_parts` spelling is also accepted for compatibility, while
-`show_part_messages` takes precedence if both appear.
-
-## Fixed in 0.2.17
-
-`/close [reason]` now sends PART before closing a channel buffer, including when
-attached to a relay. A failed leave request keeps the buffer open and displays
-the error. PART echoes, queued messages, and relay replay cannot reopen the
-closed channel; use `/join #channel` to open it again. In relay mode, leaving
-affects the shared IRC connection and therefore all attached clients. Closing
-a private conversation still only closes its local buffer; a new PM can reopen it.
-Configured autojoin channels are unchanged.
-
-## Fixed in 0.2.16
-
-Restored the configurable CTCP VERSION response, which was accidentally removed
-in the later slash-command update along with its configuration field. The newer
-slash commands remain available. Rebuild and restart the IRC-owning instance
-(the relay server in relay mode) to apply the fix; existing `ctcp_version`
-settings work again. The binary version is corrected to `0.2.16`.
-
-## New in 0.2.15
-
-Customize the text returned to `/ctcp yourNick VERSION` in your existing TOML configuration:
-
-```toml
-[general]
-ctcp_version = "My IRC client"
-```
-
-Omit `ctcp_version` to retain `AnsiChat by Britney Lozza`, or set it to `""` to disable VERSION replies. Leading/trailing whitespace is trimmed. The value must be a single line without NUL or CTCP delimiter characters. This changes only the CTCP VERSION response, not `--version` or other CTCP replies. Requests still appear in the conversation even when replies are disabled.
-
-In direct mode, configure your local client. In relay mode, configure the **relay server**, which sends the IRC replies; changing only an attached client's config has no effect. Restart the relevant instance after changing this setting.
-
-## New in 0.2.14
-
-- **Per-buffer drafts:** channels, private conversations, and server buffers each retain their own unsent text, cursor position, and multiline paste state when you switch away. Drafts stay on the current machine for the current session and survive relay reconnects. Sending clears that buffer's draft; `/close` discards it.
-- **`/clear`:** clears the current buffer's visible scrollback and unread marker. Other buffers, your input draft, log files, and relay history remain intact. Cleared rows stay hidden across buffer switches and relay reconnects in the same session. Restarting AnsiChat can load history again.
-- **Custom highlights:** add literal words or phrases alongside your nickname. Matches are case-insensitive, respect word boundaries, and apply to other users' messages and `/me` actions. They use the existing mention color and Gotify mention setting; your own messages do not trigger alerts.
-- **URL grabber:** optionally collect HTTP(S) links from messages, actions, and notices, including your own. Configure it on the relay server to collect while clients are disconnected, or on your local machine in direct mode.
-
-Add these settings to the existing sections of your TOML config:
-
-```toml
-[general]
-highlight_words = ["AnsiChat", "alternateNick", "server down"]
-
-[urls]
-file = "~/.local/state/ansichat/urls.jsonl"
-```
-
-For relay-owned Gotify alerts, set `highlight_words` on the relay. Clients receive those highlight flags and can add local highlight words for display. Client-only words cannot trigger notifications owned by the relay. Restart the relevant instance after changing the config.
-
-URL collection is disabled when `urls.file` is blank or omitted. The file is append-only JSON Lines, with `time`, `server`, `target`, `nick`, and `url` on each line; timestamps include their timezone. Parent directories are created automatically. Links are never opened or fetched. Ignored messages and relay attachment replay are not collected. Each URL is saved only once across all buffers, keeping its first sender/channel/time. The saved file is indexed at startup, so duplicate suppression survives reconnects and restarts, including repeated IRC history. Scheme and hostname casing are ignored; paths, queries, and fragments remain distinct. Use a separate file for each collector process.
-
-URL writes run in a bounded background queue. Slow or failing storage cannot block IRC delivery; queue overflow drops links, and the first collection error appears in the first configured network's server buffer. Later messages retry writes. If an existing file cannot be read or contains malformed records, collection is disabled until the file is fixed and AnsiChat restarted, so it cannot append duplicates unknowingly. `/clear` does not erase collected URLs.
-
-## Fixed in 0.2.13
-
-Nicknames containing IRC-valid square brackets now render literally in the user list. In particular, a nickname such as `[aruna]` no longer loses its closing bracket to gotui's inline-style parser.
-
-## Fixed in 0.2.12
-
-IRC server connections now prefer IPv6 regardless of the DNS resolver's address ordering. AnsiChat starts with the server's IPv6 addresses, then begins an IPv4 fallback after 250 milliseconds so IPv4-only servers and networks with unavailable or broken IPv6 still connect promptly. An explicit IPv4 or IPv6 address in `host` continues to use that address family directly.
-
-## New in 0.2.11
-
-`/ignore` provides a persistent, relay-aware ignore list with network, channel, and global scopes. Plain masks support case-insensitive `*` wildcards; advanced rules may use Go/RE2 expressions prefixed with `re:`. Ignored chat, actions, notices, typing indicators, CTCP lines, and DCC offers are removed before history and notifications, while membership and moderation state remains intact. Command results are displayed in the buffer where `/ignore` was entered.
-
-Common forms are `/ignore add Alice`, `/ignore add Alice --channel`, `/ignore add Alice --global`, `/ignore list`, `/ignore remove Alice`, `/ignore remove 2`, and `/ignore clear`. Rules live in `[general].ignore_file`, which defaults to `~/.config/ansichat/ignores.toml`; relay users configure this on the relay server.
-
-## Fixed in 0.2.10
-
-`/whois nick` now displays readable WHOIS details in the buffer where the command was entered. Responses work in direct and relay-client modes, including account, idle time, channels, secure-connection status, and CertFP information. Raw WHOIS events remain available to Lua scripts.
-
-## New in 0.2.9
-
-Per-server `tls_cert_file` and `tls_key_file` settings enable TLS client certificates, CertFP, and SASL EXTERNAL. The two settings may point to the same combined PEM file. Invalid or incomplete certificate configuration is rejected with a clear server-specific error; see [CONFIGURATION.md](CONFIGURATION.md#liberachat-with-certfp-and-sasl-external) for the Libera.Chat setup and registration procedure.
-
-## Fixed in 0.2.8
-
-JOIN, PART, and QUIT notices remain visible in the transcript but no longer increment the unread activity number beside a buffer. Other events and messages continue to count normally. Update clients and the relay so this metadata survives relay delivery and retained-history restoration.
-
-## Fixed in 0.2.7
-
-Channel buffer names now ignore capitalization: `#C` and `#c` share one transcript, unread count, and sidebar entry. This also applies when restoring relay history. Update and restart clients; update the relay as well so its retained history uses the same channel identity.
-
-## Fixed in 0.2.6
-
-Multiline paste is collected as a single draft instead of interpreting each pasted newline as Enter. Newlines appear as `↵` in the input; press Enter to send the draft as ordinary chat text. Delivery runs in the background, one bounded message at a time, with progress in the status bar. You can keep editing a new draft, switch channels, or use `/paste cancel` to stop after the current line. IRC flood protection still limits transmission speed.
-
-A stopped or failed paste retains unconfirmed/unsent text. `/paste restore` puts that remainder back into the input and selects its original target; check the last attempted line before retrying because delivery can be uncertain. `/paste discard` removes the retained remainder, and `/paste status` shows progress. Pasted slash-prefixed lines in a multiline draft are sent as text. Long lines are split on UTF-8 boundaries and empty lines are skipped. Large single-line pastes use the same background sender. Paste collection is limited to 1 MiB; an oversized paste is rejected as a whole. This requires terminal bracketed-paste support.
-
-The relay also rejects overlapping message sends promptly rather than accumulating rate-limit waits against its shared IRC connection. Update clients for paste handling and the relay for the send guard; protocol remains 2.
-
-## New in 0.2.5
-
-`Alt+B` toggles the channel list and `Alt+U` toggles the user list independently. Chat uses the freed space, and typing and live updates continue. Visibility is temporary for the current session; the user list still automatically hides on narrow terminals. Rebind these with `[keybindings].toggle_channel_list` and `toggle_user_list`.
-
-## Fixed in 0.2.4
-
-When Gotify is enabled on the relay, the relay sends eligible mention/private-message alerts whether or not clients are attached. Client alerts are suppressed to avoid duplicates. If relay Gotify is disabled, the oldest eligible attached client remains responsible for notifications.
-
-In relay-client mode, `/gotify status` and `/gotify test` now query/test the relay's notifier. Status includes HTTP delivery successes, failures, queue drops, and the last attempt/success/error. Counters reset when AnsiChat restarts; HTTP success means Gotify accepted the alert, not that a phone displayed it. Failed alerts are not automatically retried. Update the relay and clients for remote diagnostics; protocol remains 2.
-
-## Fixed in 0.2.3
-
-A sleeping or stalled relay client can no longer block shared IRC broadcasts while its SSH channel is being closed. Slow attachments are removed immediately, with socket cleanup in the background and a timeout on outgoing channel writes. Other attached machines remain independent of that cleanup. Typing notifications now run outside the keyboard handler, with at most one in flight, so an unresponsive relay cannot freeze draft editing through typing updates.
-
-Update and restart the relay server to apply the attachment isolation fix; update desktop/laptop clients for responsive typing. Relay protocol remains 2.
-
-## Fixed in 0.2.2
-
-Reconnect readiness now waits for IRC registration. Chat, `/msg`, `/me`, and `/notice` retain their input if a send cannot be confirmed. A unique IRC PING/PONG checks that the server read past the text before reporting success; it does not guarantee recipient delivery or override channel permissions. If confirmation is lost, check the channel before retrying to avoid duplicates. Messages are not automatically resent.
-
-SSH request timeouts now include blocked writes, and stale attachments close their underlying socket first. IRC keepalive detection is faster. Update both relay servers and clients to get all fixes; relay protocol remains 2.
-
-## Fixed in 0.2.1
-
-Channel selection once again clears activity indicators and follows the newest messages. IRC formatting controls and their color parameters no longer appear as stray digits in messages or restored log previews. Relay protocol remains 2.
-
-## New in 0.2.0
-
-- Relay-side Gotify alerts for mentions and private messages while no clients are attached; one eligible attached client owns live alerts to avoid duplicates.
-- `/search text` searches retained messages in the current buffer, with literal, case-insensitive highlighting. `F3` / `F4` or `/searchnext` / `/searchprev` move between matching messages and wrap around. `/search` with no text clears the search.
-- `Alt+A` or `/unread` jumps to the next unread buffer. Selecting a buffer clears its activity indicator and resumes following the newest messages. Messages arriving while you scroll back remain unread, with a **New messages below** divider; `End` or `/markread` acknowledges them.
-- Optional `[relay].history_file` restores bounded structured replay history after a relay restart. Stable message IDs distinguish identical messages and deduplicate reconnect replay.
-- Smaller TUI source files for commands, keyboard, mouse, navigation, rendering, reconnect, search, and catch-up behavior.
-
-**Upgrade relay servers and clients together:** this release uses relay protocol 2. Search covers retained messages, not older disk logs. Read positions are currently local to each running client; persisting and synchronizing them is a future increment.
-
-## Requirements
-
-AnsiChat requires **Go 1.26 or newer**. Relay mode uses the September 2026 SSH security fixes in `golang.org/x/crypto v0.56.0`.
-
-## Build
+Install **Go 1.26 or newer**, then run from the repository root:
 
 ```sh
-go mod tidy
 go build -o ansichat ./cmd/ansichat
-```
-
-Check the version with:
-
-```sh
 ./ansichat -version
 ```
 
-## Configuration
+For the desktop GUI or Android APK, follow the [GUI guide](GUI.md).
 
-### Upgrading from Copperline
+### 2. Create a basic configuration
 
-AnsiChat 0.2.32 continues the existing project under its new name. Build the
-renamed entry points with `make tui` and `make gui`, or use the commands below.
-For an installed desktop launcher, run `make install-gui` to update its name and
-executable. Update any relay service or startup command to run `ansichat`.
+Save this as `my-config.toml` and replace `YourNick` with your IRC nickname:
 
-AnsiChat uses only `ansichat/config.toml` by default. It does not silently
-reuse `copperline/config.toml` or Copperline paths for logs, ignore rules,
-scripts, and relay keys. Copy an existing configuration and SSH keys to the
-AnsiChat directory before upgrading a relay; explicit paths still work.
+```toml
+[general]
+nick = "YourNick"
+user = "YourNick"
+real_name = "AnsiChat User"
+timestamp = "15:04"
 
-The GUI/Android app ID remains `ca.cerberusgames.copperline` to retain private
-settings and keys and allow Android updates with the same signing certificate.
-The relay wire protocol remains version 2 and keeps its existing channel
-identifier and default SSH username (`copperline`), allowing existing clients
-and relays to connect. Custom CTCP VERSION replies remain unchanged; the built-in
-reply and `/flex` now identify AnsiChat.
-
-New Lua scripts use `ansichat.*`; `copperline.*` remains an alias for existing
-scripts. No script conversion is required.
-
-For the complete TOML reference, defaults, theme options, DCC, SASL, IRCv3 capability settings, keybindings, logging, and relay settings, see [`CONFIGURATION.md`](CONFIGURATION.md).
-
-For Lua scripts, custom commands, event hooks, and the complete scripting API, see [`SCRIPTING.md`](SCRIPTING.md).
-
-For the native SSH relay/bouncer mode, including server/client TOML examples and key setup, see [`RELAY.md`](RELAY.md).
-
-AnsiChat defaults to:
-
-```text
-~/.config/ansichat/config.toml
+[[server]]
+name = "libera"
+host = "irc.libera.chat"
+port = 6697
+tls = true
+auto_connect = false
 ```
 
-or `$XDG_CONFIG_HOME/ansichat/config.toml` when `XDG_CONFIG_HOME` is set.
+Direct mode currently requires at least one `[[server]]` entry at startup.
+This profile keeps auto-connect off so you can choose a server with `/quick`.
+Set `auto_connect = true` if you prefer to connect to this configured network
+when AnsiChat starts.
 
-Start with `config.example.toml`:
-
-```sh
-mkdir -p ~/.config/ansichat
-cp config.example.toml ~/.config/ansichat/config.toml
-```
-
-A different configuration file can be selected with:
+Launch with your profile:
 
 ```sh
 ./ansichat -config=./my-config.toml
 ```
 
-### Passwords and secrets
+Without `-config`, AnsiChat reads `~/.config/ansichat/config.toml`, or
+`$XDG_CONFIG_HOME/ansichat/config.toml` when `XDG_CONFIG_HOME` is set.
+See [config.example.toml](config.example.toml) for a fuller example and the
+[configuration reference](CONFIGURATION.md) for all settings.
 
-For passwords and tokens, environment variables are preferable to storing secrets directly in TOML. AnsiChat reads the variable named by `password_env`, `token_env`, or the relevant secret setting.
+### 3. Connect with /quick
 
-For example, a Libera SASL configuration can use:
+Inside AnsiChat, enter:
 
-```toml
-[[server]]
-name = "libera"
-host = "irc.libera.chat"
-tls = true
-
-[server.sasl]
-mechanism = "plain"
-username = "myNick"
-password_env = "LIBERA_IRC_PASSWORD"
+```text
+/quick irc.libera.chat
 ```
 
-With fish:
+`/quick` connects to a server without adding it to your configuration and opens
+its status buffer. It uses your `[general]` identity and defaults to **TLS on
+port 6697**, with certificate verification.
 
-```fish
-read -s -P 'Libera IRC password: ' LIBERA_IRC_PASSWORD
-set -x LIBERA_IRC_PASSWORD $LIBERA_IRC_PASSWORD
-./ansichat
+To specify a port and nickname, or use a plaintext connection:
+
+```text
+/quick irc.example.org 6697 OtherNick
+/quick irc.example.org:6697 OtherNick
+/quick -plain irc.example.org 6667
 ```
 
-For bash or zsh:
+Replace `irc.example.org` with the server you want to use. Temporary sessions
+last until AnsiChat exits; `/quick` does not save them to TOML or inherit a
+configured network's passwords, SASL settings, client certificates, or channels.
+For a network that needs authentication, use a
+[configured server](CONFIGURATION.md) instead.
 
-```sh
-export LIBERA_IRC_PASSWORD='your-password-here'
-./ansichat
+In **relay mode**, `/quick` makes the IRC connection on the relay and shares it
+with attached clients. Both the client and relay need **0.2.37 or newer**;
+temporary networks disappear when the relay restarts.
+
+### 4. Join a channel and chat
+
+Once connected, join a channel of your choice:
+
+```text
+/join #your-channel
 ```
 
-### Message date and time
+Type a message and press **Enter** to send. Other useful commands:
 
-To show the date as well as the time, set `timestamp` in the existing `[general]` section of that machine's AnsiChat TOML configuration:
-
-```toml
-[general]
-timestamp = "2006-01-02 15:04:05"
-```
-
-Restart that AnsiChat client after saving. Messages display in the machine's local time, for example `2026-09-11 08:30:45`. Relay clients format their own timestamps, so you can enable dates on one machine while leaving the others unchanged; no relay-server configuration change is needed.
-
-The setting uses Go's reference-time layout: keep the literal reference date `2006-01-02` in the configuration rather than substituting today's date.
-
-| Layout | Display |
+| Command | Action |
 | --- | --- |
-| `15:04` | Hours and minutes (default) |
-| `15:04:05` | Hours, minutes, and seconds |
-| `2006-01-02 15:04` | Date, hours, and minutes |
-| `2006-01-02 15:04:05` | Date and time with seconds |
+| `/query Alice` | Open a private conversation |
+| `/nick NewNick` | Change your nickname |
+| `/part` | Leave the current channel |
+| `/server` | List known servers |
+| `/server libera` | Switch to a server's status buffer |
+| `/connect libera` | Connect the configured network named `libera` |
+| `/help` | List terminal commands |
+| `/quit` | Exit AnsiChat |
 
-`[general].timestamp` controls the format used for displayed messages and newly written logs. `[theme].timestamp` controls the timestamp color. See [the configuration reference](CONFIGURATION.md#timestamp-format) for more configuration details.
+`/server` selects a buffer; `/connect` connects an existing server entry.
+Use `/quick` to create a temporary connection to an unconfigured server.
 
-### Native SSH relay mode
+Use **Ctrl+N / Ctrl+P** to switch buffers, **Alt+A** for the next unread buffer,
+**Tab** to complete a nickname, and **PageUp / PageDown** to scroll.
+See the [user guide](USAGE.md) for all commands and controls.
 
-Select the AnsiChat role in TOML:
+## What AnsiChat includes
 
-```toml
-[relay]
-mode = "direct" # direct, server, or client
-```
+- Multiple IRC networks, channel and private-query buffers, drafts, search,
+  unread markers, and mention highlighting.
+- An embedded SSH relay with public-key authentication, pinned host keys,
+  retained history, multiple attached clients, and reconnect controls.
+- TLS, SASL PLAIN/EXTERNAL, IRCv3 capabilities, typing indicators, and history
+  requests where supported by the network.
+- Lua scripts, Gotify notifications, persistent logs, DCC transfers, configurable
+  keybindings, and true-color themes.
+- A shared Fyne GUI for desktop and Android that connects through an AnsiChat relay.
 
-A relay server contains the normal `[[server]]` IRC definitions. A relay client may omit them completely because it receives IRC network and channel state from the relay.
+Read the [feature guide](FEATURES.md) for details.
 
-Relay-client mode has a dedicated always-visible reconnect control. By default:
+## Documentation
 
-```toml
-[keybindings]
-relay_reconnect = "Alt+R"
-```
-
-Force reconnect tears down only the client's AnsiChat SSH attachment. It does not tell the relay to disconnect from IRC.
-
-See [`RELAY.md`](RELAY.md) for host-key fingerprint setup, generated client keys, `authorized_keys`, server/client configuration, retained history, and security notes.
-
-### Logging
-
-Logging is enabled by default. AnsiChat can show a small persisted conversation preview from before the current process/session while keeping current-session messages in normal live styling.
-
-Disable all on-disk IRC logs while keeping normal in-memory scrollback with:
-
-```toml
-[general]
-logging = false
-```
-
-The default log location is:
-
-```text
-~/.local/state/ansichat/logs/<server>/<buffer>.log
-```
-
-Log files are created with mode `0600`; directories use `0700`.
-
-### Gotify notifications
-
-AnsiChat can push incoming mentions and private messages to Gotify. Gotify delivery is asynchronous so a slow or unavailable notification service does not freeze IRC or the TUI. When configured on the relay server, alerts continue with clients attached or detached. Use `/gotify status` on an updated relay client to inspect the relay's delivery counters and last error; `/gotify test` sends a test from the relay. In direct mode these commands inspect the local notifier.
-
-```toml
-[gotify]
-enabled = true
-url = "https://push.example.com"
-token_env = "ANSICHAT_GOTIFY_TOKEN"
-mentions = true
-private_messages = true
-priority = 5
-timeout_seconds = 5
-```
-
-Test it from AnsiChat with:
-
-```text
-/gotify test
-```
-
-### Theme
-
-AnsiChat ships with a dark navy/copper/aqua theme, but the entire TUI palette can be overridden with `[theme]`.
-
-```toml
-[theme]
-background = "#090d16"
-panel = "#101827"
-foreground = "#d8dee9"
-muted = "#77839a"
-border = "#36506b"
-title = "#64d8cb"
-selected_fg = "#071018"
-selected_bg = "#d99058"
-timestamp = "#77839a"
-server = "#64d8cb"
-channel = "#8bd49c"
-query = "#d9a7ff"
-unread = "#f6c177"
-mention = "#ff9ecb"
-notice = "#f6c177"
-action = "#d9a7ff"
-system = "#72c7ef"
-error = "#ff6b81"
-dcc = "#8bd49c"
-topic = "#f2cc8f"
-input = "#eef1f6"
-cursor_fg = "#071018"
-cursor_bg = "#64d8cb"
-status_fg = "#071018"
-status_bg = "#64d8cb"
-nick_colors = ["#ff7b72", "#f6c177", "#8bd49c", "#64d8cb", "#72c7ef", "#d9a7ff"]
-```
-
-Nick colors are chosen deterministically from `nick_colors`, so the same nickname keeps the same color.
-
-## Lua scripting
-
-AnsiChat embeds Lua for client-side automation and customization. Scripts load from `~/.config/ansichat/scripts/*.lua` by default and can register slash commands, hook IRC events, send messages/notices, write to buffers, and use raw IRC.
-
-Use:
-
-```text
-/lua reload
-```
-
-to reload scripts without restarting AnsiChat.
-
-The complete API lives in [`SCRIPTING.md`](SCRIPTING.md), and the source tree includes ready-to-copy examples in [`scripts/`](scripts/).
-
-## Layout and controls
-
-The left panel contains servers and channel/query buffers. Every visible buffer is numbered. The middle panel contains the current conversation. Wide terminals also get a nick list on the right. The topic sits above the transcript, and the message input and status/control area sit at the bottom.
-
-All action bindings are configurable under `[keybindings]`. Default controls include:
-
-- `Ctrl-N`: next buffer
-- `Ctrl-P`: previous buffer
-- `Alt-A`: next unread buffer
-- `F3` / `F4`: next / previous search match
-- `Alt-N`: scroll the right-hand user list down
-- `Alt-P`: scroll the right-hand user list up
-- `F6`, number, `Enter`: jump directly to a numbered buffer
-- `Escape`: cancel buffer jump
-- `Tab`: nickname completion; repeated Tab cycles matches
-- `Up` / `Down`: older/newer input history for the current buffer
-- `PageUp` / `PageDown`: transcript by page
-- `Alt-K` / `Alt-J`: transcript by one line
-- `Alt-L`: bare/copy mode for terminal text selection
-- `End`: return to/follow newest messages
-- `Alt-R`: force reconnect to a AnsiChat relay while in relay-client mode
-- `Ctrl-U`: clear input
-- `Ctrl-C`: quit
-
-For example:
-
-```toml
-[keybindings]
-user_list_down = "Ctrl+Y"
-user_list_up = "Ctrl+U"
-history_previous = "Up"
-history_next = "Down"
-relay_reconnect = "Alt+R"
-```
-
-If you reassign a binding such as `Ctrl+U`, move any conflicting action to another key. AnsiChat validates configurable action keys so invalid or conflicting bindings fail clearly instead of silently doing something unexpected.
-
-Input history is session-only and separate for each buffer. It stores both ordinary messages and slash commands. The default is 10 entries per buffer and is configurable with:
-
-```toml
-[general]
-input_history_limit = 10
-```
-
-Set it to `0` to disable input history.
-
-Press `Alt+B` to show/hide the channel list, or `Alt+U` to show/hide the user list. Both toggles keep chat live and your draft intact.
-
-Press `Alt-L` for bare/copy mode. AnsiChat temporarily hides the normal UI chrome and disables terminal mouse reporting so the terminal can perform normal text selection. IRC, logging, Gotify, DCC, scripting, and incoming message state continue in the background.
-
-## Commands
-
-```text
-/help
-/buffer number
-/quick [-tls|-plain] host[:port] [port] [nickname]
-/server [name]
-/connect [server]
-/disconnect [server] [reason]
-/join #channel [key]
-/part [#channel] [reason]
-/query nick
-/msg nick message
-/me action
-/notice target message
-/ctcp nick command [text]
-/nick newnick
-/oper name password
-/away [message]
-/back
-/mode [target] [modes [arguments]]
-/op [#channel] nick
-/deop [#channel] nick
-/voice [#channel] nick
-/devoice [#channel] nick
-/kick [#channel] nick [reason]
-/ban [#channel] [mask]
-/unban [#channel] mask
-/invite nick [#channel]
-/list [channels [server]]
-/names [#channel]
-/who [mask [flags]]
-/whowas nick [count [server]]
-/motd [server]
-/time [server]
-/stats [query [server]]
-/links [mask | server mask]
-/map
-/flex
-/topic new topic
-/whois nick
-/ignore [list]
-/ignore add mask [--channel|--global]
-/ignore remove number|mask
-/ignore clear
-/raw IRC COMMAND HERE
-/history [count]
-/search [text]
-/searchnext
-/searchprev
-/unread
-/markread
-/caps
-/dcc list
-/dcc accept nick
-/dcc send nick /path/to/file
-/paste status
-/paste cancel
-/paste restore
-/paste discard
-/gotify status
-/gotify test
-/lua list
-/lua reload
-/lua eval <code>
-/close
-/quit [reason]
-```
-
-Channel commands default to the active channel; outside a channel, supply one
-explicitly. `/mode` defaults to the active channel or, in other buffers, your own
-nickname. `/mode +m` changes the current channel; `/mode yournick +i` changes your
-user modes. A leading `+` or `-` is interpreted as a mode string; use `/raw MODE`
-to explicitly address legacy `+channel` names. `/ban` without a mask lists bans;
-ban masks are sent as entered (there is no automatic nick-to-hostmask lookup).
-`/invite #channel nick` is also accepted. `/who` defaults to the active channel,
-or `*` elsewhere. `/map` requests the current server's network topology and displays
-its replies in that server's status buffer. `/names`, `/who`, and channel-mode query replies appear in the
-requesting buffer; other server replies use the existing server/channel output.
-
-For `/oper`, everything after the name is the password, including internal spaces
-and a leading colon; do not add quotes. The command is excluded from input history.
-`/away` with no message and `/back` both clear away status.
-
-CTCP examples:
-
-```text
-/ctcp Alice VERSION
-/ctcp Alice TIME
-/ctcp Alice PING 123456789
-```
-
-## IRCv3 capability set
-
-Capabilities currently requested by default include:
-
-```text
-account-notify
-account-tag
-away-notify
-batch
-cap-notify
-chghost
-echo-message
-extended-join
-invite-notify
-labeled-response
-message-tags
-multi-prefix
-server-time
-setname
-standard-replies
-userhost-in-names
-draft/chathistory
-draft/event-playback
-draft/extended-monitor
-draft/message-redaction
-draft/multiline
-draft/no-implicit-names
-draft/read-marker
-```
-
-Not every requested draft capability has a dedicated UI action yet. `/raw` remains available for experimenting with network-specific IRCv3 commands and extensions.
-
-## DCC notes
-
-Traditional DCC establishes a direct TCP connection between IRC users. It is not protected by the TLS connection to the IRC server and can reveal IP addresses.
-
-For outgoing DCC SEND, configure `dcc.advertise_ip` to an address the other user can reach. NAT/router port forwarding may be necessary. Incoming filenames are reduced to their basename, downloads use exclusive file creation, and existing files are not overwritten.
-
-AnsiChat currently implements normal active DCC SEND and incoming DCC CHAT. Passive/reverse DCC SEND (`port 0`) and DCC RESUME are possible future additions.
-
-## Project layout
-
-```text
-cmd/ansichat/       program entry point
-internal/config/      TOML configuration
-internal/model/       buffers and messages
-internal/irc/         direct multi-server IRC + IRCv3 backend
-internal/relay/       embedded SSH relay server/client and protocol
-internal/logging/     persistent logs and pre-session backlog
-internal/gotify/      Gotify notification client
-internal/dcc/         DCC parsing and transfers
-internal/scripting/   embedded Lua runtime and scripting API
-scripts/              example Lua scripts
-internal/tui/         gotui interface, navigation, input, and commands
-```
-
-## Mention highlighting
-
-AnsiChat highlights incoming messages and `/me` actions that mention your current nickname. The mention color is configurable with `theme.mention`. Your own outgoing messages are never highlighted as mentions.
+| Guide | Contents |
+| --- | --- |
+| [Setup and upgrades](SETUP.md) | Building, configuration examples, secrets, logging, themes, and migration from Copperline |
+| [Configuration reference](CONFIGURATION.md) | TOML options and defaults |
+| [User guide](USAGE.md) | Terminal layout, keyboard controls, slash commands, and `/quick` |
+| [SSH relay](RELAY.md) | Persistent sessions, server/client setup, keys, and history |
+| [Desktop and Android](GUI.md) | GUI setup, desktop builds, and Android packaging |
+| [Lua scripting](SCRIPTING.md) | Custom commands, events, and the scripting API; [example scripts](scripts/) |
+| [Features](FEATURES.md) | Relay behavior, IRCv3 capabilities, DCC, and mention highlighting |
+| [Release notes](CHANGELOG.md) | Changes by version |
+| [Contributing](CONTRIBUTING.md) | Code policy, validation, and project layout |
 
 ## License
 
-AnsiChat is licensed under the **GNU General Public License version 3 or later (GPL-3.0-or-later)**. See [`LICENSE`](LICENSE).
+AnsiChat is licensed under the **GNU General Public License version 3 or later
+(GPL-3.0-or-later)**. See [LICENSE](LICENSE).
