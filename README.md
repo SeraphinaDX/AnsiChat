@@ -42,13 +42,11 @@ name = "libera"
 host = "irc.libera.chat"
 port = 6697
 tls = true
-auto_connect = false
+auto_connect = true
 ```
 
-Direct mode currently requires at least one `[[server]]` entry at startup.
-This profile keeps auto-connect off so you can choose a server with `/quick`.
-Set `auto_connect = true` if you prefer to connect to this configured network
-when AnsiChat starts.
+This connects to Libera.Chat over TLS when AnsiChat starts. The name `libera`
+is the local name you will use with `/server` and `/connect`.
 
 Launch with your profile:
 
@@ -61,35 +59,23 @@ Without `-config`, AnsiChat reads `~/.config/ansichat/config.toml`, or
 See [config.example.toml](config.example.toml) for a fuller example and the
 [configuration reference](CONFIGURATION.md) for all settings.
 
-### 3. Connect with /quick
+### 3. Select your server
 
-Inside AnsiChat, enter:
-
-```text
-/quick irc.libera.chat
-```
-
-`/quick` connects to a server without adding it to your configuration and opens
-its status buffer. It uses your `[general]` identity and defaults to **TLS on
-port 6697**, with certificate verification.
-
-To specify a port and nickname, or use a plaintext connection:
+Inside AnsiChat, select the configured network:
 
 ```text
-/quick irc.example.org 6697 OtherNick
-/quick irc.example.org:6697 OtherNick
-/quick -plain irc.example.org 6667
+/server libera
 ```
 
-Replace `irc.example.org` with the server you want to use. Temporary sessions
-last until AnsiChat exits; `/quick` does not save them to TOML or inherit a
-configured network's passwords, SASL settings, client certificates, or channels.
-For a network that needs authentication, use a
-[configured server](CONFIGURATION.md) instead.
+This opens its status buffer, where you can see connection progress and server
+replies. The example configuration connects automatically. If you set
+`auto_connect = false` or disconnected earlier, connect manually with:
 
-In **relay mode**, `/quick` makes the IRC connection on the relay and shares it
-with attached clients. Both the client and relay need **0.2.37 or newer**;
-temporary networks disappear when the relay restarts.
+```text
+/connect libera
+```
+
+Use the configured name (`libera`), rather than the hostname, with these commands.
 
 ### 4. Join a channel and chat
 
@@ -113,7 +99,6 @@ Type a message and press **Enter** to send. Other useful commands:
 | `/quit` | Exit AnsiChat |
 
 `/server` selects a buffer; `/connect` connects an existing server entry.
-Use `/quick` to create a temporary connection to an unconfigured server.
 
 Use **Ctrl+N / Ctrl+P** to switch buffers, **Alt+A** for the next unread buffer,
 **Tab** to complete a nickname, and **PageUp / PageDown** to scroll.
@@ -139,7 +124,7 @@ Read the [feature guide](FEATURES.md) for details.
 | --- | --- |
 | [Setup and upgrades](SETUP.md) | Building, configuration examples, secrets, logging, themes, and migration from Copperline |
 | [Configuration reference](CONFIGURATION.md) | TOML options and defaults |
-| [User guide](USAGE.md) | Terminal layout, keyboard controls, slash commands, and `/quick` |
+| [User guide](USAGE.md) | Terminal layout, keyboard controls, and slash commands |
 | [SSH relay](RELAY.md) | Persistent sessions, server/client setup, keys, and history |
 | [Desktop and Android](GUI.md) | GUI setup, desktop builds, and Android packaging |
 | [Lua scripting](SCRIPTING.md) | Custom commands, events, and the scripting API; [example scripts](scripts/) |
