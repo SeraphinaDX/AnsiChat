@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestCanonicalKeyBindingFriendlyNames(t *testing.T) {
 	tests := map[string]string{
@@ -35,7 +39,11 @@ func TestKeyBindingMatchesAltAliases(t *testing.T) {
 func TestApplyDefaultsAddsKeybindings(t *testing.T) {
 	cfg := Config{}
 	cfg.applyDefaults()
-	if cfg.General.IgnoreFile != "~/.config/ansichat/ignores.toml" {
+	root, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.General.IgnoreFile != filepath.Join(root, "ansichat", "ignores.toml") {
 		t.Fatalf("ignore file default = %q", cfg.General.IgnoreFile)
 	}
 	if cfg.Keybindings.UserListDown != "Alt+N" || cfg.Keybindings.UserListUp != "Alt+P" {

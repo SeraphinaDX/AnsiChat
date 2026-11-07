@@ -1,8 +1,13 @@
 package relay
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,4 +90,53 @@ func TestDisabledHistoryDoesNotCreateFiles(t *testing.T) {
 	if err := s.saveHistory(); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestStreamHistoryFormat(t *testing.T) {
+	for _, messages := range [][]model.Message{nil, {{RelayID: "id", Server: "test", Target: "#go", Text: "quote \" newline\n <tag>", Tags: map[string]string{"key": "value"}}}} {
+		var out bytes.Buffer
+		if err := writeHistory(&out, []*model.Buffer{{Messages: messages}, {}}); err != nil {
+			t.Fatal(err)
+		}
+		var got historySnapshot
+		if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+			t.Fatal(err)
+		}
+		if got.Version != 1 || len(got.Messages) != len(messages) {
+			t.Fatalf("unexpected history: %#v", got)
+		}
+		if len(messages) > 0 && !reflect.DeepEqual(got.Messages, messages) {
+			t.Fatal("message changed")
+		}
+	}
+}
+
+func BenchmarkHistoryEncoding(b *testing.B) {
+	buffers := make([]*model.Buffer, 20)
+	for i := range buffers {
+		buffers[i] = &model.Buffer{Messages: make([]model.Message, 1000)}
+		for j := range buffers[i].Messages {
+			buffers[i].Messages[j] = model.Message{RelayID: "0123456789abcdef0123456789abcdef", Server: "test", Target: "#go", Text: strings.Repeat("message ", 20), Kind: model.KindMessage}
+		}
+	}
+	b.Run("previous", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			data := historySnapshot{Version: 1}
+			for _, buffer := range buffers {
+				data.Messages = append(data.Messages, buffer.Messages...)
+			}
+			if err := json.NewEncoder(io.Discard).Encode(data); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("streamed", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			if err := writeHistory(io.Discard, buffers); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
 }

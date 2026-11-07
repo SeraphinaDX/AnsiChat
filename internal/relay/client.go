@@ -1,10 +1,12 @@
 package relay
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"sort"
 	"strings"
@@ -178,6 +180,14 @@ func (c *Client) initialSync() error {
 			if !gotHello {
 				return errors.New("relay became ready before protocol hello")
 			}
+			// The initial history frame can be several megabytes. A streaming
+			// decoder retains its largest input buffer for its entire lifetime.
+			// Copy only unread bytes into a fresh decoder for small live frames.
+			buffered, err := io.ReadAll(c.dec.Buffered())
+			if err != nil {
+				return fmt.Errorf("relay buffered data: %w", err)
+			}
+			c.dec = json.NewDecoder(io.MultiReader(bytes.NewReader(buffered), c.ch))
 			return nil
 		case "error":
 			return errors.New(f.Error)
@@ -469,12 +479,14 @@ func (c *Client) snapshotCopy() ircclient.StateSnapshot {
 	return cloneSnapshot(c.snapshot)
 }
 
+// server returns a read-only view. Published snapshots are replaced wholesale,
+// never mutated; public accessors must copy any slices they return to callers.
 func (c *Client) server(name string) (ircclient.ServerSnapshot, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	for _, s := range c.snapshot.Servers {
 		if strings.EqualFold(s.Name, name) {
-			return cloneServerSnapshot(s), true
+			return s, true
 		}
 	}
 	return ircclient.ServerSnapshot{}, false
@@ -602,7 +614,9 @@ func (c *Client) Capabilities(server string) []string {
 	return append([]string(nil), s.Capabilities...)
 }
 func (c *Client) DCCOffers() []dcc.Offer {
-	return c.snapshotCopy().DCCOffers
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return append([]dcc.Offer(nil), c.snapshot.DCCOffers...)
 }
 func (c *Client) DCCAccept(server, peer string, onChatLine func(string)) error {
 	key := dccCallbackKey(server, peer)

@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"bufio"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -73,10 +74,6 @@ func (s *Server) saveHistory() error {
 	}
 	path := config.ExpandPath(s.cfg.Relay.HistoryFile)
 	buffers, _ := s.state.Snapshot()
-	data := historySnapshot{Version: 1}
-	for _, b := range buffers {
-		data.Messages = append(data.Messages, b.Messages...)
-	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
@@ -86,7 +83,7 @@ func (s *Server) saveHistory() error {
 	}
 	defer os.Remove(f.Name())
 	defer f.Close()
-	if err := json.NewEncoder(f).Encode(data); err != nil {
+	if err := writeHistory(f, buffers); err != nil {
 		return err
 	}
 	if err := f.Sync(); err != nil {
@@ -104,6 +101,35 @@ func (s *Server) saveHistory() error {
 	}
 	defer dir.Close()
 	return dir.Sync()
+}
+
+// Stream individual messages so the JSON encoder never builds a second
+// history-sized buffer. Keep the snapshot outside disk I/O to avoid blocking
+// incoming IRC messages on a slow filesystem.
+func writeHistory(w io.Writer, buffers []*model.Buffer) error {
+	out := bufio.NewWriter(w)
+	if _, err := out.WriteString(`{"Version":1,"Messages":[`); err != nil {
+		return err
+	}
+	enc := json.NewEncoder(out)
+	first := true
+	for _, b := range buffers {
+		for i := range b.Messages {
+			if !first {
+				if err := out.WriteByte(','); err != nil {
+					return err
+				}
+			}
+			first = false
+			if err := enc.Encode(&b.Messages[i]); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := out.WriteString("]}\n"); err != nil {
+		return err
+	}
+	return out.Flush()
 }
 
 // Disk I/O runs independently of IRC delivery. Checkpoint once per second;

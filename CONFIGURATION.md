@@ -196,10 +196,18 @@ Global defaults and client-wide behavior.
 | `show_join_messages` | bool | `true` | Shows `nick joined` lines in channel buffers. Set to `false` to hide JOIN messages while still tracking channel membership normally. |
 | `show_part_messages` | bool | `true` | Shows `nick left` PART lines in channel buffers. Set to `false` to hide PART messages while still tracking channel membership normally. The older `show_parts` spelling is accepted as a compatibility alias. |
 | `show_quit_messages` | bool | `true` | Shows QUIT notices in the server buffer and each channel shared with the departing user. Set to `false` to hide QUIT notices without affecting membership tracking. |
-| `history_lines` | integer | `1000` | Maximum number of live messages retained in each in-memory buffer. Values `<= 0` are reset to `1000`. |
+| `history_lines` | integer | `1000` | Maximum number of messages retained in each in-memory buffer, including replayed relay history. Set independently on the client and relay. Values `<= 0` are reset to `1000`. |
 | `input_history_limit` | integer | `10` | Maximum number of messages/commands remembered per buffer for Up/Down input history during the current session. `0` disables input history. Negative values are rejected. |
 | `log_backlog_lines` | integer | `10` | On the first visit to a channel buffer during a session, display this many persisted lines from before the current AnsiChat run in the muted theme color. Messages received during the current run always use normal live styling, even if the channel is first opened much later. Set to `0` to disable. |
 | `reconnect_seconds` | integer | `10` | Delay between reconnect attempts. Values `<= 0` are reset to `10`. |
+
+## Memory use and diagnostics
+
+`general.history_lines` applies per buffer, so additional busy channels can increase memory use as each history fills. Relay clients retain their own bounded copy of replayed messages. For a smaller local scrollback, set `history_lines = 200` in the client's `[general]` section and restart it. The relay can keep a larger limit in its own config; changing the client's limit does not trim relay history or disk logs.
+
+The terminal executable accepts `-memprofile=/path/to/heap.pprof`. After 30 seconds it runs garbage collection and writes a heap profile plus a `.txt` file containing memory counters before and after collection. Both output paths must be new; files are created with owner-only permissions. Leave the process running until capture finishes, then inspect it with `go tool pprof -top ./ansichat /path/to/heap.pprof`.
+
+For comparison runs on Linux, `GOGC=50 GODEBUG=disablethp=1 ./ansichat` requests more frequent garbage collection and disables transparent huge pages for most Go heap mappings. More frequent collection trades CPU work for reduced heap overhead. These are optional runtime settings, not application defaults. Resident RAM includes more than live Go objects, so compare both process RAM and the post-collection heap counters under similar workloads.
 
 ## Channel ordering
 
