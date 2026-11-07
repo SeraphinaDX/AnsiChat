@@ -44,18 +44,20 @@ type Message struct {
 }
 
 type Buffer struct {
-	Server    string
-	Target    string
-	Messages  []Message
-	Unread    int
-	Total     uint64
-	ReadTotal uint64
+	lastMentionTotal uint64
+	Server           string
+	Target           string
+	Messages         []Message
+	Unread           int
+	Total            uint64
+	ReadTotal        uint64
 }
 
 // BufferInfo is a lightweight buffer snapshot for UI/navigation code that
 // does not need message history. Keeping these paths history-free avoids
 // copying every message in every buffer during routine redraws.
 type BufferInfo struct {
+	Mention   bool
 	Server    string
 	Target    string
 	Unread    int
@@ -132,6 +134,9 @@ func (s *State) Add(msg Message) {
 	}
 	b.Messages = append(b.Messages, msg)
 	b.Total++
+	if msg.Mention && !msg.SuppressUnread {
+		b.lastMentionTotal = b.Total
+	}
 	if len(b.Messages) > s.MaxLines {
 		drop := len(b.Messages) - s.MaxLines
 		// Drop old messages in-place instead of allocating/copying the entire
@@ -222,7 +227,7 @@ func (s *State) CurrentInfo() *BufferInfo {
 	if b == nil {
 		return nil
 	}
-	return &BufferInfo{Server: b.Server, Target: b.Target, Unread: b.Unread, Total: b.Total, ReadTotal: b.ReadTotal}
+	return &BufferInfo{Mention: b.lastMentionTotal > b.ReadTotal, Server: b.Server, Target: b.Target, Unread: b.Unread, Total: b.Total, ReadTotal: b.ReadTotal}
 }
 
 // SnapshotInfo returns lightweight buffer metadata in stable creation order.
@@ -233,7 +238,7 @@ func (s *State) SnapshotInfo() ([]BufferInfo, string) {
 	out := make([]BufferInfo, 0, len(s.Order))
 	for _, key := range s.Order {
 		if b := s.Buffers[key]; b != nil {
-			out = append(out, BufferInfo{Server: b.Server, Target: b.Target, Unread: b.Unread, Total: b.Total, ReadTotal: b.ReadTotal})
+			out = append(out, BufferInfo{Mention: b.lastMentionTotal > b.ReadTotal, Server: b.Server, Target: b.Target, Unread: b.Unread, Total: b.Total, ReadTotal: b.ReadTotal})
 		}
 	}
 	return out, s.CurrentKey
@@ -257,7 +262,7 @@ func (s *State) CurrentWindow(sinceTotal uint64) *MessageWindow {
 	}
 	msgs := append([]Message(nil), b.Messages[idx:]...)
 	return &MessageWindow{
-		BufferInfo: BufferInfo{Server: b.Server, Target: b.Target, Unread: b.Unread, Total: b.Total, ReadTotal: b.ReadTotal},
+		BufferInfo: BufferInfo{Mention: b.lastMentionTotal > b.ReadTotal, Server: b.Server, Target: b.Target, Unread: b.Unread, Total: b.Total, ReadTotal: b.ReadTotal},
 		Start:      start,
 		Messages:   msgs,
 	}

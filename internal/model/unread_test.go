@@ -50,3 +50,37 @@ func TestSuppressedUnreadRowsRemainVisibleWithoutCountingAsActivity(t *testing.T
 		t.Fatalf("suppressed rows disappeared from transcript: %#v", b)
 	}
 }
+
+func TestUnreadMentionSurvivesEvictionAndClearsWhenRead(t *testing.T) {
+	s := New(2)
+	s.Select("test", "#active")
+	s.Add(Message{Server: "test", Target: "#other", Kind: KindMessage, Mention: true})
+	mentionTotal := uint64(1)
+	for range 3 {
+		s.Add(Message{Server: "test", Target: "#other", Kind: KindMessage})
+	}
+	infos, _ := s.SnapshotInfo()
+	if !infos[1].Mention {
+		t.Fatal("evicted unread mention lost its channel highlight")
+	}
+	s.MarkReadThrough("test", "#other", mentionTotal+1)
+	infos, _ = s.SnapshotInfo()
+	if infos[1].Mention || infos[1].Unread != 2 {
+		t.Fatalf("read mention state = %#v", infos[1])
+	}
+	s.Add(Message{Server: "test", Target: "#other", Kind: KindAction, Mention: true})
+	s.MarkReadThrough("test", "#other", 4)
+	infos, _ = s.SnapshotInfo()
+	if !infos[1].Mention {
+		t.Fatal("reading an older snapshot cleared a newer mention")
+	}
+	s.Select("test", "#other")
+	if s.CurrentInfo().Mention {
+		t.Fatal("selecting channel did not clear mention")
+	}
+	s.Add(Message{Server: "test", Target: "#other", Kind: KindMessage, Mention: true})
+	s.SelectKey(Key("test", "#other"))
+	if s.CurrentInfo().Mention {
+		t.Fatal("selecting channel by key did not clear mention")
+	}
+}

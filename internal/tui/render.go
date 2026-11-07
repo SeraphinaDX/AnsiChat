@@ -113,7 +113,11 @@ func (a *App) rebuildSidebar() {
 			} else if !model.IsChannel(b.Target) {
 				prefix = "  " + styled("@", a.cfg.Theme.Query) + " "
 			}
-			label := numberLabel(len(rows)+1) + prefix + b.Target
+			target := b.Target
+			if b.Mention && model.Key(b.Server, b.Target) != current {
+				target = styled("! "+target, a.cfg.Theme.Mention)
+			}
+			label := numberLabel(len(rows)+1) + prefix + target
 			if b.Unread > 0 {
 				label += " " + styled(fmt.Sprintf("(%d)", b.Unread), a.cfg.Theme.Unread)
 			}
