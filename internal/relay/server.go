@@ -245,6 +245,8 @@ func (p *serverPeer) handleRequest(req frame) {
 		cancel()
 	case "ping":
 		result = true
+	case "quick":
+		resultText, err = m.QuickConnect(req.Text)
 	case "connect":
 		err = m.ConnectServer(req.Server)
 	case "disconnect":

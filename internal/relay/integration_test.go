@@ -1,6 +1,7 @@
 package relay
 
 import (
+	"bufio"
 	"net"
 	"os"
 	"path/filepath"
@@ -99,8 +100,59 @@ func TestSSHReplayAfterRestart(t *testing.T) {
 		t.Fatalf("live message=%#v", live)
 	}
 	c.Stop("")
-	_, replay := connect()
+	reconnected, replay := connect()
 	if receive(replay).RelayID != id || receive(replay).RelayID != live.RelayID {
 		t.Fatal("reconnect changed message identities")
+	}
+
+	// Exercise /quick over SSH and verify that it reaches a new IRC endpoint.
+	ircListener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ircListener.Close()
+	registered := make(chan bool, 1)
+	go func() {
+		conn, err := ircListener.Accept()
+		if err != nil {
+			registered <- false
+			return
+		}
+		defer conn.Close()
+		_ = conn.SetDeadline(time.Now().Add(3 * time.Second))
+		scanner := bufio.NewScanner(conn)
+		nick, user := false, false
+		for scanner.Scan() {
+			line := scanner.Text()
+			nick = nick || line == "NICK quicknick"
+			user = user || strings.HasPrefix(line, "USER ")
+			if nick && user {
+				registered <- true
+				return
+			}
+		}
+		registered <- false
+	}()
+	name, err := reconnected.QuickConnect("-plain " + ircListener.Addr().String() + " quicknick")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.irc.Stop("test complete")
+	if !strings.HasSuffix(name, "/plain") {
+		t.Fatalf("quick server name = %q", name)
+	}
+	select {
+	case ok := <-registered:
+		if !ok {
+			t.Fatal("quick session did not register with the requested nickname")
+		}
+	case <-time.After(4 * time.Second):
+		t.Fatal("quick session did not reach IRC server")
+	}
+	if len(s.cfg.Servers) != 0 {
+		t.Fatal("quick persisted a server configuration")
+	}
+	if _, err := reconnected.QuickConnect("host 0"); err == nil {
+		t.Fatal("relay accepted invalid quick port")
 	}
 }

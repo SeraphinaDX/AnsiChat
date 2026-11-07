@@ -671,3 +671,9 @@ func (c *Client) GotifyTest() error {
 	_, err := c.call("gotify_test", frame{})
 	return err
 }
+
+// QuickConnect creates a temporary IRC session on the relay server.
+func (c *Client) QuickConnect(args string) (string, error) {
+	response, err := c.call("quick", frame{Text: args})
+	return response.Text, err
+}

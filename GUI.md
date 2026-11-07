@@ -1,4 +1,4 @@
-# AnsiChat GUI 0.2.36
+# AnsiChat GUI 0.2.37
 
 Formerly Copperline GUI. The installed name and executable are now AnsiChat and
 `ansichat-gui`. The technical app ID stays `ca.cerberusgames.copperline` so that
@@ -8,6 +8,12 @@ continue using the same signing certificate as the installed app.
 One Fyne frontend for desktop and Android, using AnsiChat's existing SSH relay
 client. This milestone is a **relay client**. Start an existing AnsiChat relay
 server using [RELAY.md](RELAY.md); the GUI does not connect directly to IRC.
+
+Use `/quick irc.example.org` to open a temporary IRC connection through the
+relay without adding a configured network. TLS defaults to port 6697; use
+`/quick -plain irc.example.org 6667` for plaintext or append a port and nickname.
+Update both the GUI client and relay to 0.2.37 for this command. Temporary
+networks are shared by attached clients and disappear when the relay restarts.
 
 ## First connection
 
@@ -95,6 +101,7 @@ Supported slash commands:
 
 | Command | Usage |
 | --- | --- |
+| `/quick` | `/quick [-tls\|-plain] host[:port] [port] [nickname]` |
 | `/join` | `/join #channel [key]` |
 | `/part` | `/part [#channel] [reason]` |
 | `/msg` | `/msg nick message` |
