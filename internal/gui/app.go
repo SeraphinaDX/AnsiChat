@@ -204,7 +204,7 @@ func (g *App) build() {
 	g.transcript.Wrapping = fyne.TextWrapWord
 	g.scroll = container.NewVScroll(g.transcript)
 
-	g.channels = widget.NewList(func() int { return len(g.buffers) }, func() fyne.CanvasObject { return widget.NewLabel("") }, func(id widget.ListItemID, o fyne.CanvasObject) {
+	g.channels = widget.NewList(func() int { return len(g.buffers) }, func() fyne.CanvasObject { return widget.NewRichText() }, func(id widget.ListItemID, o fyne.CanvasObject) {
 		b := g.buffers[id]
 		label := b.Server + " / " + b.Target
 		if b.Target == "*server*" {
@@ -213,7 +213,14 @@ func (g *App) build() {
 		if b.Unread > 0 {
 			label += fmt.Sprintf(" (%d)", b.Unread)
 		}
-		o.(*widget.Label).SetText(label)
+		color := theme.ColorNameForeground
+		if current := g.state.CurrentInfo(); b.Mention && current != nil && model.Key(b.Server, b.Target) != model.Key(current.Server, current.Target) {
+			label = "! " + label
+			color = "mention"
+		}
+		row := o.(*widget.RichText)
+		row.Segments = []widget.RichTextSegment{&widget.TextSegment{Text: label, Style: widget.RichTextStyle{ColorName: color}}}
+		row.Refresh()
 	})
 	g.channels.OnSelected = func(id widget.ListItemID) {
 		if id >= 0 && id < len(g.buffers) {

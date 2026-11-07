@@ -190,6 +190,12 @@ removed; neither departure event increments unread activity. In relay mode,
 set these options on the IRC-owning relay server and restart it. The relay
 forwards generated notices to attached clients without a protocol change.
 
+## Fixed in 0.2.36
+
+Mentions now highlight channels you are not currently viewing in the terminal
+and graphical interfaces. The highlight clears when you open the channel or
+mark the mention read.
+
 ## Fixed in 0.2.35
 
 Reduce relay-client memory overhead by releasing the large startup history decoder buffer, avoiding full server-state copies for routine lookups, and caching visible transcript cells. Relay checkpoints now stream message JSON to reduce temporary allocations. Add opt-in `-memprofile` diagnostics. History limits remain configurable per buffer and independently on each client and relay.

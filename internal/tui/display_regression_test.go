@@ -150,3 +150,20 @@ func TestSearchIgnoresHiddenColorParameters(t *testing.T) {
 		t.Fatalf("matched hidden formatting: %s, row %d", a.search.label, a.transcript.SelectedRow)
 	}
 }
+
+func TestBackgroundMentionHighlightsChannelUntilSelected(t *testing.T) {
+	a := newCatchupApp(t)
+	server := a.irc.ServerNames()[0]
+	a.state.Select(server, "#active")
+	a.state.Add(model.Message{Server: server, Target: "#other", Kind: model.KindMessage, Mention: true})
+	a.rebuildSidebar()
+	highlighted := styled("! #other", a.cfg.Theme.Mention)
+	if !strings.Contains(strings.Join(a.sidebar.Rows, "\n"), highlighted) {
+		t.Fatal("background channel mention was not highlighted")
+	}
+	a.state.Select(server, "#other")
+	a.rebuildSidebar()
+	if strings.Contains(strings.Join(a.sidebar.Rows, "\n"), highlighted) {
+		t.Fatal("channel mention remained highlighted after selection")
+	}
+}
