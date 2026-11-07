@@ -86,6 +86,16 @@ func Execute(c Context, line string) error {
 	cmd, rest := CutWord(strings.TrimPrefix(line, "/"))
 	arg, tail := CutWord(rest)
 	switch strings.ToLower(cmd) {
+	case "quick":
+		backend, ok := c.Backend.(interface{ QuickConnect(string) (string, error) })
+		if !ok {
+			return fmt.Errorf("this backend does not support /quick")
+		}
+		server, err := backend.QuickConnect(rest)
+		if err == nil && c.Open != nil {
+			c.Open(server, "*server*")
+		}
+		return err
 	case "join":
 		if !model.IsChannel(arg) {
 			return fmt.Errorf("usage: /join #channel [key]")
@@ -138,6 +148,6 @@ func Execute(c Context, line string) error {
 		}
 		return nil
 	default:
-		return fmt.Errorf("unknown GUI command /%s; use /join, /part, /msg, /me, /notice, /flex, /nick, /topic, /whois, /map, /raw, /clear", cmd)
+		return fmt.Errorf("unknown GUI command /%s; use /quick, /join, /part, /msg, /me, /notice, /flex, /nick, /topic, /whois, /map, /raw, /clear", cmd)
 	}
 }

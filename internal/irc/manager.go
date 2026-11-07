@@ -67,6 +67,7 @@ type typingEntry struct {
 }
 
 type Session struct {
+	quick    bool
 	cfg      config.ServerConfig
 	client   *girc.Client
 	setupErr error

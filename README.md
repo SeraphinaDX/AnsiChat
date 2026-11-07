@@ -190,6 +190,23 @@ removed; neither departure event increments unread activity. In relay mode,
 set these options on the IRC-owning relay server and restart it. The relay
 forwards generated notices to attached clients without a protocol change.
 
+## Added in 0.2.37
+
+Connect to an unconfigured IRC server with `/quick irc.example.org`. TLS with
+certificate verification is the default (port 6697). Use
+`/quick irc.example.org 6697 MyNick` or `/quick irc.example.org:6697 MyNick`
+for a custom port/nickname, or `/quick -plain irc.example.org 6667` for plaintext.
+Without a nickname override, the connection uses the IRC-owning process's
+`[general]` identity. Network passwords, SASL, client certificates, and autojoin
+channels are not inherited.
+
+The command selects the new server's status buffer; use `/join #channel` next.
+Sessions remain available for `/connect` and `/disconnect` until the process
+exits, without writing to TOML. Repeating the same endpoint and nickname reuses
+the session. In relay mode the connection is made on the relay and shared by
+attached clients; update both client and relay to 0.2.37 to use `/quick`.
+The wire protocol remains version 2; older relays reject the new command.
+
 ## Fixed in 0.2.36
 
 Mentions now highlight channels you are not currently viewing in the terminal
@@ -717,6 +734,7 @@ Press `Alt-L` for bare/copy mode. AnsiChat temporarily hides the normal UI chrom
 ```text
 /help
 /buffer number
+/quick [-tls|-plain] host[:port] [port] [nickname]
 /server [name]
 /connect [server]
 /disconnect [server] [reason]

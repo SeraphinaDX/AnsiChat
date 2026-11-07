@@ -108,3 +108,28 @@ func TestInvalidInputNeverDispatches(t *testing.T) {
 		}
 	}
 }
+
+type quickBackend struct {
+	commandBackend
+	args string
+}
+
+func (b *quickBackend) QuickConnect(args string) (string, error) {
+	b.args = args
+	return "quick-server", b.err
+}
+func TestQuickOpensStatusOnlyWhenAccepted(t *testing.T) {
+	for _, failure := range []error{nil, errors.New("unsupported by relay")} {
+		b := &quickBackend{commandBackend: commandBackend{err: failure}}
+		opened := false
+		err := Execute(Context{Backend: b, Open: func(s, target string) {
+			opened = true
+			if s != "quick-server" || target != "*server*" {
+				t.Fatalf("bad quick target: %s/%s", s, target)
+			}
+		}}, "/QuIcK -plain host 6667 nick")
+		if !errors.Is(err, failure) || opened != (failure == nil) || b.args != "-plain host 6667 nick" {
+			t.Fatalf("dispatch: opened=%v args=%q err=%v", opened, b.args, err)
+		}
+	}
+}
