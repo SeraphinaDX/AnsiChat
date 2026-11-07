@@ -26,11 +26,21 @@ type transcriptList struct {
 	unreadBefore int
 	searchQuery  string
 	searchMinRow int
+	wrappedRows  map[transcriptWrapKey][]transcriptPhysicalLine
+}
+
+// Cache only the last viewport, rather than parsed cells for all scrollback.
+type transcriptWrapKey struct {
+	text, query            string
+	width                  int
+	wrap, selected, unread bool
+	style, selectedStyle   ui.Style
 }
 
 type transcriptPhysicalLine struct {
 	logicalRow int
 	cells      []ui.Cell
+	positioned []ui.CellWithX
 }
 
 func parseTranscriptStyles(row string, defaultStyle ui.Style) []ui.Cell {
@@ -138,11 +148,26 @@ func (t *transcriptList) visiblePhysicalLines() ([]transcriptPhysicalLine, bool,
 	// to be visible. Reverse once at the end for normal top-to-bottom drawing.
 	reversed := make([]transcriptPhysicalLine, 0, height)
 	hasOlder := false
+	nextCache := make(map[transcriptWrapKey][]transcriptPhysicalLine)
 
 	for row := selected; row >= 0 && len(reversed) < height; row-- {
-		wrapped := t.wrapLogicalRow(row, width)
+		key := transcriptWrapKey{text: t.Rows[row], width: width, wrap: t.WrapText, selected: row == t.SelectedRow, unread: t.unread && row == t.unreadBefore, style: t.TextStyle, selectedStyle: t.SelectedStyle}
+		if row >= t.searchMinRow {
+			key.query = t.searchQuery
+		}
+		wrapped, ok := t.wrappedRows[key]
+		if !ok {
+			cells := t.wrapLogicalRow(row, width)
+			wrapped = make([]transcriptPhysicalLine, len(cells))
+			for i, line := range cells {
+				wrapped[i] = transcriptPhysicalLine{cells: line, positioned: ui.BuildCellWithXArray(ui.TrimCells(line, width))}
+			}
+		}
+		nextCache[key] = wrapped
 		for i := len(wrapped) - 1; i >= 0 && len(reversed) < height; i-- {
-			reversed = append(reversed, transcriptPhysicalLine{logicalRow: row, cells: wrapped[i]})
+			line := wrapped[i]
+			line.logicalRow = row
+			reversed = append(reversed, line)
 			if len(reversed) == height {
 				// There is older visible content either earlier in this same
 				// wrapped logical row or in an older logical row.
@@ -152,6 +177,7 @@ func (t *transcriptList) visiblePhysicalLines() ([]transcriptPhysicalLine, bool,
 		}
 	}
 
+	t.wrappedRows = nextCache
 	lines := make([]transcriptPhysicalLine, len(reversed))
 	for i := range reversed {
 		lines[len(reversed)-1-i] = reversed[i]
@@ -203,8 +229,7 @@ func (t *transcriptList) wrapLogicalRow(row, width int) [][]ui.Cell {
 }
 
 func (t *transcriptList) drawPhysicalLine(buf *ui.Buffer, line transcriptPhysicalLine, y int) {
-	cells := ui.TrimCells(line.cells, t.Inner.Dx())
-	positioned := ui.BuildCellWithXArray(cells)
+	positioned := line.positioned
 	if len(positioned) == 0 {
 		return
 	}

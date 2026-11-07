@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"fmt"
+	"image"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -106,5 +109,77 @@ func TestTranscriptDoesNotInterpretIRCTextAsGotuiMarkup(t *testing.T) {
 	want := "X <someone> literal [not markup](fg:#ff0000) stays literal"
 	if got != want {
 		t.Fatalf("rendered message = %q, want %q", got, want)
+	}
+}
+
+func TestTranscriptViewportCacheMatchesFreshRendering(t *testing.T) {
+	list := &transcriptList{List: widgets.NewList()}
+	list.WrapText = true
+	list.SetRect(0, 0, 30, 8)
+	list.Rows = []string{"first", "long line with wide characters 日本語 and search", "last"}
+	list.SelectedRow = 2
+	changes := []func(){func() {}, func() { list.SetRect(0, 0, 18, 8) }, func() { list.SelectedRow = 1 }, func() { list.searchQuery = "line" }, func() { list.searchMinRow = 2 }, func() { list.unread = true; list.unreadBefore = 1 }, func() { list.Rows[1] = "changed line" }, func() { list.TextStyle.Fg = ui.ColorRed }, func() { list.WrapText = false }, func() { list.Rows = []string{"replacement"}; list.SelectedRow = 0 }}
+	for i, change := range changes {
+		change()
+		got, older, newer := list.visiblePhysicalLines()
+		cached := list.wrappedRows
+		list.wrappedRows = nil
+		want, wantOlder, wantNewer := list.visiblePhysicalLines()
+		if !reflect.DeepEqual(got, want) || older != wantOlder || newer != wantNewer {
+			t.Fatalf("change %d produced stale rendering", i)
+		}
+		if len(cached) > list.Inner.Dy() {
+			t.Fatal("cache exceeds viewport")
+		}
+		list.wrappedRows = cached
+	}
+}
+
+func BenchmarkTranscriptViewport(b *testing.B) {
+	for _, cached := range []bool{false, true} {
+		b.Run(fmt.Sprintf("cached=%v", cached), func(b *testing.B) {
+			list := &transcriptList{List: widgets.NewList()}
+			list.WrapText = true
+			list.SetRect(0, 0, 100, 30)
+			for i := 0; i < 1000; i++ {
+				list.Rows = append(list.Rows, fmt.Sprintf("%d %s", i, strings.Repeat("a chat message ", 8)))
+			}
+			list.SelectedRow = 999
+			list.visiblePhysicalLines()
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				if !cached {
+					list.wrappedRows = nil
+				}
+				list.visiblePhysicalLines()
+			}
+		})
+	}
+}
+
+func BenchmarkTranscriptCellDrawing(b *testing.B) {
+	for _, previous := range []bool{true, false} {
+		b.Run(fmt.Sprintf("previous=%v", previous), func(b *testing.B) {
+			list := &transcriptList{List: widgets.NewList()}
+			list.WrapText = true
+			list.SetRect(0, 0, 100, 30)
+			for i := 0; i < 1000; i++ {
+				list.Rows = append(list.Rows, fmt.Sprintf("%d %s", i, strings.Repeat("a chat message ", 8)))
+			}
+			list.SelectedRow = 999
+			lines, _, _ := list.visiblePhysicalLines()
+			buf := ui.NewBuffer(image.Rect(0, 0, 100, 30))
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				for i, line := range lines {
+					if previous {
+						line.positioned = ui.BuildCellWithXArray(ui.TrimCells(line.cells, list.Inner.Dx()))
+					}
+					list.drawPhysicalLine(buf, line, list.Inner.Min.Y+i)
+				}
+			}
+		})
 	}
 }
