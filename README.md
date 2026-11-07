@@ -190,6 +190,10 @@ removed; neither departure event increments unread activity. In relay mode,
 set these options on the IRC-owning relay server and restart it. The relay
 forwards generated notices to attached clients without a protocol change.
 
+## Fixed in 0.2.35
+
+Reduce relay-client memory overhead by releasing the large startup history decoder buffer, avoiding full server-state copies for routine lookups, and caching visible transcript cells. Relay checkpoints now stream message JSON to reduce temporary allocations. Add opt-in `-memprofile` diagnostics. History limits remain configurable per buffer and independently on each client and relay.
+
 ## Fixed in 0.2.34
 
 Fixed a terminal-input decoder loop when a UTF-8 character is split across TTY reads. Even a short website paste containing curly quotes could stall before its paste-end marker reached the editor. UTF-8 input is now decoded as a continuous stream, so incomplete characters wait for the next read instead of spinning. This complements the large-input performance changes in 0.2.33. Update the terminal client; the relay does not need an update.
