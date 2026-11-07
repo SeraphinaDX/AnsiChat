@@ -12,8 +12,6 @@ AnsiChat is not a toy IRC example and it is not just a thin wrapper around an IR
 
 One AnsiChat installation can connect directly to IRC, run headlessly as a persistent relay, or act as a local TUI attached to a remote AnsiChat relay. The relay transport is built directly into AnsiChat using Go's SSH libraries: **no system `ssh`, no `sshd`, no web service, no TLS certificate, and no certificate authority are required.**
 
-![AnsiChat main gui interface](screenshots/screenshot4.avif)
-
 ![AnsiChat themes in terminal](screenshots/screenshot2.avif)
 
 <p align="center">
