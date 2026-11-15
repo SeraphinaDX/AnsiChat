@@ -921,6 +921,9 @@ func (m *Manager) Capabilities(server string) []string {
 func (m *Manager) DCCOffers() []dcc.Offer { return m.dcc.Offers() }
 
 func (m *Manager) DCCAccept(server, peer string, onChatLine func(string)) error {
+	if !m.cfg.DCC.Enabled {
+		return errors.New("DCC is disabled in configuration")
+	}
 	offers := m.dcc.Offers()
 	for _, o := range offers {
 		if o.Server == server && strings.EqualFold(o.Peer, peer) {

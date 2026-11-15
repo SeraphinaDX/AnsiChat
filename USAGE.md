@@ -162,5 +162,6 @@ The command selects the new server's status buffer; use `/join #channel` next.
 Sessions remain available for `/connect` and `/disconnect` until the process
 exits, without writing to TOML. Repeating the same endpoint and nickname reuses
 the session. In relay mode the connection is made on the relay and shared by
-attached clients; update both client and relay to 0.2.37 to use `/quick`.
+attached clients. Since 0.2.39, the relay operator must explicitly enable
+`[relay].allow_quick = true`; otherwise use configured IRC servers.
 The wire protocol remains version 2; older relays reject the new command.

@@ -42,6 +42,8 @@ file = "" # e.g. "~/.local/state/ansichat/urls.jsonl"
 # embedded SSH server (server), or as a local TUI attached to such a relay
 # (client). Direct mode preserves the traditional behavior.
 [relay]
+# Keep false to restrict clients to operator-configured IRC servers.
+allow_quick = false
 mode = "direct"
 
 # Relay-server settings. Uncomment/change these when mode = "server". The
@@ -136,7 +138,8 @@ enabled = true
 dir = "~/.config/ansichat/scripts"
 
 [dcc]
-enabled = true
+# Direct connections only; DCC is always disabled on the relay.
+enabled = false
 download_dir = "~/Downloads"
 # For outgoing DCC SEND, set this to the public/LAN IP peers can reach.
 advertise_ip = "192.0.2.10"

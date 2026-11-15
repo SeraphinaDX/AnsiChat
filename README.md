@@ -13,6 +13,10 @@ if you have an existing installation.
 
 ![AnsiChat terminal interface](screenshots/screenshot2.avif)
 
+## Fixed in 0.2.39
+
+Relay DCC is disabled to prevent server-file disclosure and connections to peer-selected destinations. Relay `/quick` is disabled unless the operator sets `relay.allow_quick = true`; configured IRC servers remain available. SSH connections and incoming requests are bounded, authorized-key options fail closed, and removed keys disconnect within five seconds. Direct DCC transfers have size, concurrency, and time limits.
+
 ## Fixed in 0.2.38
 
 Unread counts now exclude messages discarded by the local history limit, so relay catch-up and long-running buffers cannot show more unread messages than they retain. Update the client to receive this fix; client and relay history limits remain independent.

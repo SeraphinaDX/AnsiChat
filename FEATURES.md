@@ -171,6 +171,8 @@ Not every requested draft capability has a dedicated UI action yet. `/raw` remai
 
 ## DCC notes
 
+DCC is available only for direct IRC connections; relay clients cannot send or accept DCC transfers or chats.
+
 Traditional DCC establishes a direct TCP connection between IRC users. It is not protected by the TLS connection to the IRC server and can reveal IP addresses.
 
 For outgoing DCC SEND, configure `dcc.advertise_ip` to an address the other user can reach. NAT/router port forwarding may be necessary. Incoming filenames are reduced to their basename, downloads use exclusive file creation, and existing files are not overwritten.

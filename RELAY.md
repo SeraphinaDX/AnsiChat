@@ -166,7 +166,6 @@ In `server` mode the relay owns:
 - IRCv3 capability state
 - bounded in-memory message history
 - the normal persistent AnsiChat logs
-- DCC network connections and received files
 
 `[general].history_lines` on the relay server controls the maximum retained in-memory message history per buffer that can be replayed to a newly attached client.
 
@@ -222,9 +221,13 @@ This makes the relay behave like a persistent IRC bouncer rather than like a rem
 
 ## DCC notes
 
-DCC is owned by the relay server because that is where the IRC/network backend runs. Incoming DCC SEND files are therefore saved in the relay server's configured `download_dir`.
+DCC send, receive, and chat are unavailable through the relay, even when `[dcc].enabled` is true. Use a direct IRC connection for DCC. This prevents relay clients from reading server files or connecting to peer-selected DCC addresses.
 
-DCC CHAT lines are forwarded back to the requesting AnsiChat client. For DCC SEND initiated from a relay client, the path currently refers to the **relay server's filesystem**; transferring an arbitrary local client file to the relay before DCC SEND is not part of relay protocol version 2.
+Relay `/quick` is disabled by default. Configure IRC servers on the relay instead. Operators who trust every authorized client to choose arbitrary outbound IRC destinations can explicitly set `allow_quick = true` in `[relay]`.
+
+The relay accepts at most 64 simultaneous TCP connections and 16 new connections per second, with a 20-second SSH handshake deadline. Each SSH transport accepts one relay channel. Incoming frames must be newline-terminated JSON smaller than 64 KiB; requests are limited to four concurrent operations per client and 32 across the relay.
+
+Only plain public-key entries are supported in `authorized_keys`. Entries with OpenSSH options such as `from=` are rejected rather than silently accepted without their restrictions. Removing a key disconnects its existing transports within five seconds; unreadable or invalid key files also disconnect existing clients.
 
 ## Protocol
 
@@ -234,6 +237,5 @@ The application protocol is versioned independently from SSH. Version 2 uses new
 - IRC connection/event records
 - coalesced server/channel/nick-list/topic/capability snapshots
 - request/response frames for IRC commands
-- DCC CHAT lines
 
 Large IRC state bursts such as NAMES/WHO are coalesced before snapshots are sent so they do not cause a flood of SSH round trips or redraws.
