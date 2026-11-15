@@ -18,7 +18,7 @@ func TestSSHReplayAfterRestart(t *testing.T) {
 	no := false
 	cfg := &config.Config{
 		General: config.GeneralConfig{HistoryLines: 10, Logging: &no},
-		Relay:   config.RelayConfig{Mode: "server", User: "ansichat", HostKey: filepath.Join(dir, "host"), AuthorizedKeys: filepath.Join(dir, "authorized"), PrivateKey: filepath.Join(dir, "client"), HistoryFile: filepath.Join(dir, "history.json")},
+		Relay:   config.RelayConfig{AllowQuick: true, Mode: "server", User: "ansichat", HostKey: filepath.Join(dir, "host"), AuthorizedKeys: filepath.Join(dir, "authorized"), PrivateKey: filepath.Join(dir, "client"), HistoryFile: filepath.Join(dir, "history.json")},
 	}
 	_, _, pub, err := loadOrCreateClientSigner(cfg.Relay.PrivateKey, "")
 	if err != nil {

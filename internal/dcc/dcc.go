@@ -18,8 +18,10 @@ import (
 type Kind string
 
 const (
-	Send Kind = "SEND"
-	Chat Kind = "CHAT"
+	Send            Kind  = "SEND"
+	Chat            Kind  = "CHAT"
+	maxFileBytes    int64 = 1 << 30
+	transferTimeout       = 10 * time.Minute
 )
 
 type Offer struct {
@@ -43,6 +45,7 @@ type Event struct {
 
 type Manager struct {
 	mu          sync.Mutex
+	active      chan struct{}
 	offers      map[string]Offer
 	downloadDir string
 	listenAddr  string
@@ -53,6 +56,7 @@ type Manager struct {
 func New(downloadDir, listenAddr, advertiseIP string, emit func(Event)) *Manager {
 	return &Manager{
 		offers:      make(map[string]Offer),
+		active:      make(chan struct{}, 4),
 		downloadDir: downloadDir,
 		listenAddr:  listenAddr,
 		advertiseIP: advertiseIP,
@@ -71,22 +75,35 @@ func (m *Manager) ParseOffer(server, peer, text string) (Offer, error) {
 			return Offer{}, errors.New("invalid DCC SEND")
 		}
 		port, err := strconv.Atoi(parts[3])
-		if err != nil {
-			return Offer{}, fmt.Errorf("invalid DCC port: %w", err)
+		if err != nil || port < 0 || port > 65535 {
+			return Offer{}, errors.New("invalid DCC port")
 		}
 		size, err := strconv.ParseInt(parts[4], 10, 64)
-		if err != nil {
-			return Offer{}, fmt.Errorf("invalid DCC size: %w", err)
+		if err != nil || size < 0 || size > maxFileBytes {
+			return Offer{}, errors.New("DCC size must be between 0 and 1 GiB")
 		}
 		addr, err := decodeAddress(parts[2])
 		if err != nil {
 			return Offer{}, err
+		}
+		name := filepath.Base(parts[1])
+		if name == "." || name == ".." || name == string(filepath.Separator) {
+			return Offer{}, errors.New("invalid DCC filename")
 		}
 		o := Offer{ID: id(server, peer), Server: server, Peer: peer, Kind: Send, Filename: filepath.Base(parts[1]), Address: addr, Port: port, Size: size, Created: time.Now()}
 		if len(parts) > 5 {
 			o.Token = parts[5]
 		}
 		m.mu.Lock()
+		for key, offer := range m.offers {
+			if time.Since(offer.Created) > 10*time.Minute {
+				delete(m.offers, key)
+			}
+		}
+		if len(m.offers) >= 128 {
+			m.mu.Unlock()
+			return Offer{}, errors.New("too many pending DCC offers")
+		}
 		m.offers[o.ID] = o
 		m.mu.Unlock()
 		return o, nil
@@ -95,8 +112,8 @@ func (m *Manager) ParseOffer(server, peer, text string) (Offer, error) {
 			return Offer{}, errors.New("invalid DCC CHAT")
 		}
 		port, err := strconv.Atoi(parts[3])
-		if err != nil {
-			return Offer{}, err
+		if err != nil || port < 1 || port > 65535 {
+			return Offer{}, errors.New("invalid DCC port")
 		}
 		addr, err := decodeAddress(parts[2])
 		if err != nil {
@@ -104,6 +121,15 @@ func (m *Manager) ParseOffer(server, peer, text string) (Offer, error) {
 		}
 		o := Offer{ID: id(server, peer), Server: server, Peer: peer, Kind: Chat, Address: addr, Port: port, Created: time.Now()}
 		m.mu.Lock()
+		for key, offer := range m.offers {
+			if time.Since(offer.Created) > 10*time.Minute {
+				delete(m.offers, key)
+			}
+		}
+		if len(m.offers) >= 128 {
+			m.mu.Unlock()
+			return Offer{}, errors.New("too many pending DCC offers")
+		}
 		m.offers[o.ID] = o
 		m.mu.Unlock()
 		return o, nil
@@ -127,7 +153,10 @@ func (m *Manager) AcceptSend(server, peer string) error {
 	if !ok || o.Kind != Send {
 		return errors.New("no pending DCC SEND from that peer")
 	}
-	go m.receiveFile(o)
+	if !m.acquire() {
+		return errors.New("too many active DCC transfers")
+	}
+	go func() { defer m.release(); m.receiveFile(o) }()
 	return nil
 }
 
@@ -136,13 +165,18 @@ func (m *Manager) AcceptChat(server, peer string, onLine func(string)) error {
 	if !ok || o.Kind != Chat {
 		return errors.New("no pending DCC CHAT from that peer")
 	}
+	if !m.acquire() {
+		return errors.New("too many active DCC transfers")
+	}
 	go func() {
+		defer m.release()
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(o.Address, strconv.Itoa(o.Port)), 15*time.Second)
 		if err != nil {
 			m.say(o.Server, o.Peer, "CHAT connect failed: "+err.Error())
 			return
 		}
 		defer conn.Close()
+		_ = conn.SetDeadline(time.Now().Add(transferTimeout))
 		m.say(o.Server, o.Peer, "CHAT connected")
 		s := bufio.NewScanner(conn)
 		for s.Scan() {
@@ -157,12 +191,30 @@ func (m *Manager) AcceptChat(server, peer string, onLine func(string)) error {
 }
 
 func (m *Manager) SendFile(server, peer, path string, sendCTCP func(payload string)) error {
-	st, err := os.Stat(path)
+	if !m.acquire() {
+		return errors.New("too many active DCC transfers")
+	}
+	started := false
+	defer func() {
+		if !started {
+			m.release()
+		}
+	}()
+	f, err := os.Open(path)
 	if err != nil {
 		return err
 	}
-	if !st.Mode().IsRegular() {
-		return errors.New("DCC SEND requires a regular file")
+	defer func() {
+		if !started {
+			f.Close()
+		}
+	}()
+	st, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if !st.Mode().IsRegular() || st.Size() > maxFileBytes {
+		return errors.New("DCC SEND requires a regular file no larger than 1 GiB")
 	}
 	ln, err := net.Listen("tcp", m.listenAddr)
 	if err != nil {
@@ -182,7 +234,10 @@ func (m *Manager) SendFile(server, peer, path string, sendCTCP func(payload stri
 	payload := fmt.Sprintf("SEND %q %s %d %d", name, advertise, tcpAddr.Port, st.Size())
 	sendCTCP(payload)
 	m.say(server, peer, fmt.Sprintf("offered %s (%d bytes)", name, st.Size()))
+	started = true
 	go func() {
+		defer m.release()
+		defer f.Close()
 		defer ln.Close()
 		if tl, ok := ln.(*net.TCPListener); ok {
 			_ = tl.SetDeadline(time.Now().Add(2 * time.Minute))
@@ -193,13 +248,8 @@ func (m *Manager) SendFile(server, peer, path string, sendCTCP func(payload stri
 			return
 		}
 		defer conn.Close()
-		f, err := os.Open(path)
-		if err != nil {
-			m.say(server, peer, "SEND open failed: "+err.Error())
-			return
-		}
-		defer f.Close()
-		n, err := io.Copy(conn, f)
+		_ = conn.SetDeadline(time.Now().Add(transferTimeout))
+		n, err := io.CopyN(conn, f, st.Size())
 		if err != nil {
 			m.say(server, peer, fmt.Sprintf("SEND failed after %d bytes: %v", n, err))
 			return
@@ -225,17 +275,25 @@ func (m *Manager) receiveFile(o Offer) {
 		return
 	}
 	defer conn.Close()
+	_ = conn.SetDeadline(time.Now().Add(transferTimeout))
+	reader := io.LimitReader(conn, o.Size)
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
 		m.say(o.Server, o.Peer, "SEND create failed: "+err.Error())
 		return
 	}
 	defer f.Close()
+	complete := false
+	defer func() {
+		if !complete {
+			_ = os.Remove(path)
+		}
+	}()
 	m.say(o.Server, o.Peer, "receiving "+filepath.Base(path))
 	buf := make([]byte, 64*1024)
 	var total uint64
 	for {
-		n, rerr := conn.Read(buf)
+		n, rerr := reader.Read(buf)
 		if n > 0 {
 			if _, err := f.Write(buf[:n]); err != nil {
 				m.say(o.Server, o.Peer, "SEND write failed: "+err.Error())
@@ -254,16 +312,21 @@ func (m *Manager) receiveFile(o Offer) {
 			return
 		}
 	}
+	if int64(total) != o.Size {
+		m.say(o.Server, o.Peer, "SEND failed: incomplete file")
+		return
+	}
+	complete = true
 	m.say(o.Server, o.Peer, fmt.Sprintf("received %s (%d bytes)", filepath.Base(path), total))
-	m.mu.Lock()
-	delete(m.offers, o.ID)
-	m.mu.Unlock()
 }
 
 func (m *Manager) get(server, peer string) (Offer, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	o, ok := m.offers[id(server, peer)]
+	if ok {
+		delete(m.offers, id(server, peer))
+	}
 	return o, ok
 }
 
@@ -301,14 +364,14 @@ func decodeAddress(s string) (string, error) {
 }
 
 func uniquePath(path string) string {
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(path); err != nil {
 		return path
 	}
 	ext := filepath.Ext(path)
 	base := strings.TrimSuffix(path, ext)
 	for i := 1; ; i++ {
 		candidate := fmt.Sprintf("%s-%d%s", base, i, ext)
-		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
+		if _, err := os.Stat(candidate); err != nil {
 			return candidate
 		}
 	}
@@ -353,3 +416,13 @@ func splitArgs(s string) ([]string, error) {
 	flush()
 	return out, nil
 }
+
+func (m *Manager) acquire() bool {
+	select {
+	case m.active <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}
+func (m *Manager) release() { <-m.active }

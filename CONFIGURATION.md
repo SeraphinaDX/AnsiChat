@@ -362,6 +362,7 @@ Selects how AnsiChat reaches IRC. The transport is implemented inside AnsiChat w
 | `listen` | string | `"127.0.0.1:2222"` | TCP listen address used only in relay-server mode. Set an externally reachable address explicitly when remote clients need to connect. |
 | `user` | string | `"ansichat"` | SSH username accepted by the relay server and sent by the relay client. |
 | `host_key` | path | `~/.config/ansichat/relay_host_ed25519` | Relay server Ed25519 host private key. Generated automatically if missing. |
+| `allow_quick` | bool | `false` | Allows relay clients to select arbitrary outbound IRC destinations with `/quick`. Leave disabled to use operator-configured servers only. |
 | `authorized_keys` | path | `~/.config/ansichat/relay_authorized_keys` | Relay-specific public keys allowed to attach. The file is created if missing and re-read on every authentication attempt. |
 | `history_file` | path | empty (disabled) | Server-only structured replay checkpoint. Restored on startup, bounded by `general.history_lines` per buffer, independent of `general.logging`. See RELAY.md for checkpoint and failure semantics. |
 | `address` | string | none | Relay server address, such as `relay.example.com:2222`, required in client mode. |
@@ -548,7 +549,7 @@ Controls Direct Client-to-Client support.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `enabled` | bool | `false` | Enables DCC handling. When false, incoming DCC CTCP offers are not registered and outgoing `/dcc send` is rejected. |
+| `enabled` | bool | `false` | Enables DCC handling for direct connections; DCC is always disabled on the relay. When false, incoming DCC CTCP offers are not registered and outgoing `/dcc send` is rejected. |
 | `download_dir` | string | `"~/Downloads"` | Destination for received DCC SEND files. `~` and `~/...` are expanded. |
 | `listen_addr` | string | `"0.0.0.0:0"` | Local TCP address used for outgoing DCC SEND. Port `0` asks the OS to choose a free port. |
 | `advertise_ip` | string | empty | IP address advertised to the peer for outgoing DCC SEND. |
@@ -585,6 +586,8 @@ With the default wildcard listener (`0.0.0.0:0`), outgoing DCC SEND needs `adver
 If `advertise_ip` is empty and `listen_addr` resolves to a specific non-wildcard IP, AnsiChat uses that listener IP.
 
 For peers outside your LAN, the advertised address must actually be reachable. NAT/firewall configuration may therefore be necessary.
+
+DCC allows up to four active transfers/chats, 128 pending offers, and files up to 1 GiB. Transfers and chats have a ten-minute deadline; outgoing offers wait up to two minutes for a connection. Downloads stop at the advertised size and incomplete downloads are removed. Pending offers expire after ten minutes when new offers arrive.
 
 DCC traffic is a direct peer-to-peer TCP connection. IRC TLS does not encrypt the DCC transfer itself.
 

@@ -422,6 +422,7 @@ type RelayConfig struct {
 	Mode string `toml:"mode"`
 
 	// Server mode.
+	AllowQuick     bool   `toml:"allow_quick"` // permits client-selected outbound IRC destinations
 	Listen         string `toml:"listen"`
 	HostKey        string `toml:"host_key"`
 	AuthorizedKeys string `toml:"authorized_keys"`

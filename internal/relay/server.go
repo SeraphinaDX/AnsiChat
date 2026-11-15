@@ -29,11 +29,13 @@ type Server struct {
 	sshConfig   *ssh.ServerConfig
 	fingerprint string
 
-	listener net.Listener
-	peersMu  sync.Mutex
-	peers    map[*serverPeer]struct{}
-	nextPeer uint64
-	notifier *gotify.Notifier
+	requestSlots chan struct{}
+	connections  chan struct{}
+	listener     net.Listener
+	peersMu      sync.Mutex
+	peers        map[*serverPeer]struct{}
+	nextPeer     uint64
+	notifier     *gotify.Notifier
 
 	// syncMu makes initial history attachment atomic with live-message delivery.
 	syncMu sync.Mutex
@@ -49,7 +51,7 @@ type serverPeer struct {
 	ch            ssh.Channel
 	transport     net.Conn
 	enc           *json.Encoder
-	dec           *json.Decoder
+	dec           *requestDecoder
 	sendQ         chan frame
 	closed        chan struct{}
 	closeOnce     sync.Once
@@ -93,8 +95,14 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		fingerprint:  ssh.FingerprintSHA256(signer.PublicKey()),
 		peers:        make(map[*serverPeer]struct{}),
 		snapshotWake: make(chan struct{}, 1),
+		connections:  make(chan struct{}, 64),
+		requestSlots: make(chan struct{}, 32),
 	}
-	s.irc = ircclient.New(cfg, nil)
+	// DCC operates on local files and arbitrary peer addresses. Never expose it
+	// through a relay, even when the shared configuration enables direct DCC.
+	ircCfg := *cfg
+	ircCfg.DCC.Enabled = false
+	s.irc = ircclient.New(&ircCfg, nil)
 	if err := s.restoreHistory(); err != nil {
 		return nil, fmt.Errorf("relay history: %w", err)
 	}
@@ -135,6 +143,8 @@ func (s *Server) Run(ctx context.Context) error {
 		s.closePeers()
 	}()
 
+	window := time.Now()
+	attempts := 0
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -143,7 +153,32 @@ func (s *Server) Run(ctx context.Context) error {
 			}
 			return err
 		}
-		go s.serveConn(conn)
+		if time.Since(window) >= time.Second {
+			window, attempts = time.Now(), 0
+		}
+		attempts++
+		if attempts > 16 {
+			_ = conn.Close()
+			continue
+		}
+		select {
+		case s.connections <- struct{}{}:
+			go func() {
+				defer func() { <-s.connections }()
+				done := make(chan struct{})
+				defer close(done)
+				go func() {
+					select {
+					case <-ctx.Done():
+						_ = conn.Close()
+					case <-done:
+					}
+				}()
+				s.serveConn(conn)
+			}()
+		default:
+			_ = conn.Close()
+		}
 	}
 }
 
@@ -160,9 +195,37 @@ func (s *Server) serveConn(conn net.Conn) {
 	_ = conn.SetDeadline(time.Time{})
 	defer sshConn.Close()
 	go ssh.DiscardRequests(reqs)
+	// Revocation applies to existing transports within five seconds. A missing
+	// or malformed key file fails closed.
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				keys, err := loadAuthorizedKeys(s.cfg.Relay.AuthorizedKeys)
+				allowed := false
+				for key := range keys {
+					pub, parseErr := ssh.ParsePublicKey([]byte(key))
+					if parseErr == nil && ssh.FingerprintSHA256(pub) == sshConn.Permissions.Extensions["pubkey-fingerprint"] {
+						allowed = true
+					}
+				}
+				if err != nil || !allowed {
+					_ = conn.Close()
+					return
+				}
+			}
+		}
+	}()
+	accepted := false
 
 	for newChannel := range chans {
-		if newChannel.ChannelType() != channelType {
+		if newChannel.ChannelType() != channelType || accepted {
 			_ = newChannel.Reject(ssh.UnknownChannelType, "AnsiChat relay accepts only its private relay channel")
 			continue
 		}
@@ -170,9 +233,10 @@ func (s *Server) serveConn(conn net.Conn) {
 		if err != nil {
 			continue
 		}
+		accepted = true
 		go ssh.DiscardRequests(requests)
 		peer := &serverPeer{
-			server: s, ch: ch, transport: conn, enc: json.NewEncoder(ch), dec: json.NewDecoder(ch),
+			server: s, ch: ch, transport: conn, enc: json.NewEncoder(ch), dec: newRequestDecoder(ch),
 			sendQ: make(chan frame, 256), closed: make(chan struct{}),
 		}
 		go peer.writer()
@@ -214,6 +278,7 @@ func (p *serverPeer) serve() {
 	p.server.addPeer(p)
 	p.server.syncMu.Unlock()
 
+	work := make(chan struct{}, 4)
 	for {
 		var req frame
 		if err := p.dec.Decode(&req); err != nil {
@@ -225,7 +290,21 @@ func (p *serverPeer) serve() {
 		if req.Type != "request" || req.ID == 0 {
 			continue
 		}
-		go p.handleRequest(req)
+		select {
+		case work <- struct{}{}:
+			select {
+			case p.server.requestSlots <- struct{}{}:
+			case <-p.closed:
+				return
+			}
+			go func() {
+				defer func() { <-p.server.requestSlots }()
+				defer func() { <-work }()
+				p.handleRequest(req)
+			}()
+		case <-p.closed:
+			return
+		}
 	}
 }
 
@@ -246,7 +325,11 @@ func (p *serverPeer) handleRequest(req frame) {
 	case "ping":
 		result = true
 	case "quick":
-		resultText, err = m.QuickConnect(req.Text)
+		if !p.server.cfg.Relay.AllowQuick {
+			err = errors.New("relay quick connections are disabled; configure IRC servers on the relay")
+		} else {
+			resultText, err = m.QuickConnect(req.Text)
+		}
 	case "connect":
 		err = m.ConnectServer(req.Server)
 	case "disconnect":
@@ -279,12 +362,8 @@ func (p *serverPeer) handleRequest(req frame) {
 		err = m.RequestHistory(req.Server, req.Target, req.Limit)
 	case "markread":
 		err = m.MarkRead(req.Server, req.Target, req.Text)
-	case "dcc_accept":
-		err = m.DCCAccept(req.Server, req.Peer, func(line string) {
-			_ = p.send(frame{Type: "dcc_chat", Server: req.Server, Peer: req.Peer, Text: line})
-		})
-	case "dcc_send":
-		err = m.DCCSend(req.Server, req.Peer, req.Text)
+	case "dcc_accept", "dcc_send":
+		err = errors.New("DCC is unavailable through the relay; use a direct IRC connection")
 	default:
 		err = fmt.Errorf("unknown relay action %q", req.Action)
 	}

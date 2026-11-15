@@ -66,7 +66,7 @@ func loadAuthorizedKeys(path string) (map[string]struct{}, error) {
 
 	keys := make(map[string]struct{})
 	for len(bytes.TrimSpace(data)) > 0 {
-		key, _, _, rest, err := ssh.ParseAuthorizedKey(data)
+		key, _, options, rest, err := ssh.ParseAuthorizedKey(data)
 		if err != nil {
 			// Permit blank/comment-only lines by advancing one line. ParseAuthorizedKey
 			// already skips ordinary comments in most cases; this keeps malformed
@@ -82,6 +82,9 @@ func loadAuthorizedKeys(path string) (map[string]struct{}, error) {
 			}
 			data = rest
 			continue
+		}
+		if len(options) != 0 {
+			return nil, errors.New("relay authorized_keys options are unsupported; refusing to ignore restrictions")
 		}
 		keys[string(key.Marshal())] = struct{}{}
 		data = rest
